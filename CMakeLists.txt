@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if (CONFIG_LVGL)
+if (CONFIG_LVGL_V5 AND CONFIG_LVGL)
 
 set(ZEPHYR_CURRENT_LIBRARY lvgl)
-include_directories(${ZEPHYR_BASE}/lib/gui/lvgl)
+include_directories(${ZEPHYR_BASE}/lib/gui/lvgl_v5)
 
 target_include_directories(lvgl INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
