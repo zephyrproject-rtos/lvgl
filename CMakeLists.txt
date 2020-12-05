@@ -12,6 +12,24 @@ if (CONFIG_LV_ATTRIBUTE_FAST_MEM_USE_IRAM)
     target_compile_definitions(${COMPONENT_LIB} PUBLIC "-DLV_ATTRIBUTE_FAST_MEM=IRAM_ATTR")
 endif()
 
+elseif(ZEPHYR_BASE)
+
+if(CONFIG_LVGL)
+
+set(ZEPHYR_CURRENT_LIBRARY lvgl)
+include_directories(${ZEPHYR_BASE}/lib/gui/lvgl)
+
+target_include_directories(lvgl INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+zephyr_compile_definitions(LV_CONF_KCONFIG_EXTERNAL_INCLUDE=<zephyr_lvgl_conf.h>)
+
+zephyr_library()
+
+file(GLOB_RECURSE SOURCES src/*.c)
+zephyr_library_sources(${SOURCES})
+
+endif()
+
 else()
 message(FATAL_ERROR "Unknown platform.")
 endif()
