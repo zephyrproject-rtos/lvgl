@@ -10,6 +10,7 @@
 #include "lv_draw_blend.h"
 #include "lv_draw_mask.h"
 #include "../lv_misc/lv_math.h"
+#include "../lv_misc/lv_txt_ap.h"
 #include "../lv_core/lv_refr.h"
 #include "../lv_misc/lv_debug.h"
 
@@ -51,7 +52,7 @@ LV_ATTRIBUTE_FAST_MEM static void shadow_blur_corner(lv_coord_t size, lv_coord_t
     static void draw_value_str(const lv_area_t * coords, const lv_area_t * clip, const lv_draw_rect_dsc_t * dsc);
 #endif
 static void draw_full_border(const lv_area_t * area_inner, const lv_area_t * area_outer, const lv_area_t * clip,
-                             lv_coord_t radius, lv_color_t color, lv_opa_t opa, lv_blend_mode_t blend_mode);
+                             lv_coord_t radius, bool radius_is_in, lv_color_t color, lv_opa_t opa, lv_blend_mode_t blend_mode);
 LV_ATTRIBUTE_FAST_MEM static inline lv_color_t grad_get(const lv_draw_rect_dsc_t * dsc, lv_coord_t s, lv_coord_t i);
 
 /**********************
@@ -410,7 +411,8 @@ LV_ATTRIBUTE_FAST_MEM static void draw_border(const lv_area_t * coords, const lv
     area_inner.y2 -= ((dsc->border_side & LV_BORDER_SIDE_BOTTOM) ? dsc->border_width : - (dsc->border_width + rout));
 
     if(dsc->border_side == LV_BORDER_SIDE_FULL) {
-        draw_full_border(&area_inner, coords, clip, dsc->radius, dsc->border_color, dsc->border_opa, dsc->border_blend_mode);
+        draw_full_border(&area_inner, coords, clip, dsc->radius, false, dsc->border_color, dsc->border_opa,
+                         dsc->border_blend_mode);
     }
     else {
         lv_opa_t opa = dsc->border_opa;
@@ -1176,7 +1178,7 @@ static void draw_outline(const lv_area_t * coords, const lv_area_t * clip, const
     area_outer.y1 -= dsc->outline_width;
     area_outer.y2 += dsc->outline_width;
 
-    draw_full_border(&area_inner, &area_outer, clip, dsc->radius, dsc->outline_color, dsc->outline_opa,
+    draw_full_border(&area_inner, &area_outer, clip, dsc->radius, true, dsc->outline_color, dsc->outline_opa,
                      dsc->outline_blend_mode);
 }
 #endif
@@ -1294,8 +1296,16 @@ static void draw_value_str(const lv_area_t * coords, const lv_area_t * clip, con
     if(dsc->value_str == NULL) return;
     if(dsc->value_opa <= LV_OPA_MIN) return;
 
+#if LV_USE_ARABIC_PERSIAN_CHARS == 0
+    const char * str = dsc->value_str;
+#else
+    uint32_t str_len =  _lv_txt_ap_calc_bytes_cnt(dsc->value_str);
+    char * str = _lv_mem_buf_get(str_len + 1);
+    _lv_txt_ap_proc(dsc->value_str, str);
+#endif
+
     lv_point_t s;
-    _lv_txt_get_size(&s, dsc->value_str, dsc->value_font, dsc->value_letter_space, dsc->value_line_space, LV_COORD_MAX,
+    _lv_txt_get_size(&s, str, dsc->value_font, dsc->value_letter_space, dsc->value_line_space, LV_COORD_MAX,
                      LV_TXT_FLAG_NONE);
 
     lv_area_t value_area;
@@ -1320,12 +1330,12 @@ static void draw_value_str(const lv_area_t * coords, const lv_area_t * clip, con
     label_dsc.color = dsc->value_color;
     label_dsc.opa = dsc->value_opa;
 
-    lv_draw_label(&value_area, clip, &label_dsc, dsc->value_str, NULL);
+    lv_draw_label(&value_area, clip, &label_dsc, str, NULL);
 }
 #endif
 
 static void draw_full_border(const lv_area_t * area_inner, const lv_area_t * area_outer, const lv_area_t * clip,
-                             lv_coord_t radius, lv_color_t color, lv_opa_t opa, lv_blend_mode_t blend_mode)
+                             lv_coord_t radius, bool radius_is_in, lv_color_t color, lv_opa_t opa, lv_blend_mode_t blend_mode)
 {
     uint8_t other_mask_cnt = lv_draw_mask_get_cnt();
     bool simple_mode = true;
@@ -1334,18 +1344,30 @@ static void draw_full_border(const lv_area_t * area_inner, const lv_area_t * are
     int32_t inner_w = lv_area_get_width(area_inner);
     int32_t inner_h = lv_area_get_height(area_inner);
     lv_coord_t border_width = area_outer->x2 - area_inner->x2;
-    int32_t rin = radius;
-
-    int32_t short_side = LV_MATH_MIN(inner_w, inner_h);
-    if(rin > short_side >> 1) rin = short_side >> 1;
-
-    /*Get the outer area*/
-    int32_t rout = rin + border_width;
 
     int32_t coords_out_w = lv_area_get_width(area_outer);
     int32_t coords_out_h = lv_area_get_height(area_outer);
-    short_side = LV_MATH_MIN(coords_out_w, coords_out_h);
-    if(rout > short_side >> 1) rout = short_side >> 1;
+
+    int32_t rin;
+    int32_t rout;
+    if(radius_is_in) {
+        rin = radius;
+        int32_t short_side = LV_MATH_MIN(inner_w, inner_h);
+        if(rin > short_side >> 1) rin = short_side >> 1;
+
+        /*Get the outer area*/
+        rout = rin + border_width;
+    }
+    else {
+        rout = radius;
+        int32_t short_side = LV_MATH_MIN(coords_out_w, coords_out_h);
+        if(rout > short_side >> 1) rout = short_side >> 1;
+
+        /*Get the outer area*/
+        rin = rout - border_width;
+        if(rin < 0) rin = 0;
+
+    }
 
     lv_disp_t * disp    = _lv_refr_get_disp_refreshing();
     lv_disp_buf_t * vdb = lv_disp_get_buf(disp);

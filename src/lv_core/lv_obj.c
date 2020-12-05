@@ -20,12 +20,15 @@
 #include "../lv_misc/lv_fs.h"
 #include "../lv_misc/lv_gc.h"
 #include "../lv_misc/lv_math.h"
-#include "../lv_misc/lv_gc.h"
-#include "../lv_misc/lv_math.h"
 #include "../lv_misc/lv_log.h"
 #include "../lv_hal/lv_hal.h"
 #include <stdint.h>
 #include <string.h>
+
+#if LV_USE_GPU_NXP_PXP && LV_USE_GPU_NXP_PXP_AUTO_INIT
+    #include "../lv_gpu/lv_gpu_nxp_pxp.h"
+    #include "../lv_gpu/lv_gpu_nxp_pxp_osa.h"
+#endif
 
 #if defined(LV_GC_INCLUDE)
     #include LV_GC_INCLUDE
@@ -192,6 +195,13 @@ void lv_init(void)
 #if LV_USE_GPU_STM32_DMA2D
     /*Initialize DMA2D GPU*/
     lv_gpu_stm32_dma2d_init();
+#endif
+
+#if LV_USE_GPU_NXP_PXP && LV_USE_GPU_NXP_PXP_AUTO_INIT
+    if(lv_gpu_nxp_pxp_init(&pxp_default_cfg) != LV_RES_OK) {
+        LV_LOG_ERROR("PXP init error. STOP.\n");
+        for(; ;) ;
+    }
 #endif
 
     _lv_ll_init(&LV_GC_ROOT(_lv_obj_style_trans_ll), sizeof(lv_style_trans_t));
@@ -1888,7 +1898,7 @@ lv_res_t lv_event_send(lv_obj_t * obj, lv_event_t event, const void * data)
 
 /**
  * Send LV_EVENT_REFRESH event to an object
- * @param obj point to an obejct. (Can NOT be NULL)
+ * @param obj point to an object. (Can NOT be NULL)
  * @return LV_RES_OK: success, LV_RES_INV: to object become invalid (e.g. deleted) due to this event.
  */
 lv_res_t lv_event_send_refresh(lv_obj_t * obj)
@@ -3514,7 +3524,8 @@ void lv_obj_init_draw_label_dsc(lv_obj_t * obj, uint8_t part, lv_draw_label_dsc_
     draw_dsc->font = lv_obj_get_style_text_font(obj, part);
 
     if(draw_dsc->sel_start != LV_DRAW_LABEL_NO_TXT_SEL && draw_dsc->sel_end != LV_DRAW_LABEL_NO_TXT_SEL) {
-        draw_dsc->color = lv_obj_get_style_text_sel_color(obj, part);
+        draw_dsc->sel_color = lv_obj_get_style_text_sel_color(obj, part);
+        draw_dsc->sel_bg_color = lv_obj_get_style_text_sel_bg_color(obj, part);
     }
 
 #if LV_USE_BIDI
@@ -4076,8 +4087,9 @@ static void report_style_mod_core(void * style, lv_obj_t * obj)
 
         uint8_t ci;
         for(ci = 0; ci < list->style_cnt; ci++) {
-            lv_style_t * class = lv_style_list_get_style(list, ci);
-            if(class == style || style == NULL) {
+            /* changed class to _class to allow compilation as c++ */
+            lv_style_t * _class = lv_style_list_get_style(list, ci);
+            if(_class == style || style == NULL) {
                 lv_obj_refresh_style(obj, part, LV_STYLE_PROP_ALL);
                 break;
             }
@@ -4615,7 +4627,7 @@ static bool style_prop_is_cacheble(lv_style_property_t prop)
 
 /**
  * Update the cache of style list
- * @param obj pointer to an obejct
+ * @param obj pointer to an object
  * @param part the part of the object
  * @param prop the property which triggered the update
  */
@@ -4747,24 +4759,18 @@ static void invalidate_style_cache(lv_obj_t * obj, uint8_t part, lv_style_proper
 {
     if(style_prop_is_cacheble(prop) == false) return;
 
-    if(part != LV_OBJ_PART_ALL) {
+    for(part = 0; part < _LV_OBJ_PART_REAL_FIRST; part++) {
         lv_style_list_t * list = lv_obj_get_style_list(obj, part);
-        if(list == NULL) return;
+        if(list == NULL) break;
         list->valid_cache = 0;
     }
-    else {
 
-        for(part = 0; part < _LV_OBJ_PART_REAL_FIRST; part++) {
-            lv_style_list_t * list = lv_obj_get_style_list(obj, part);
-            if(list == NULL) break;
-            list->valid_cache = 0;
-        }
-        for(part = _LV_OBJ_PART_REAL_FIRST; part < 0xFF; part++) {
-            lv_style_list_t * list = lv_obj_get_style_list(obj, part);
-            if(list == NULL) break;
-            list->valid_cache = 0;
-        }
+    for(part = _LV_OBJ_PART_REAL_FIRST; part < 0xFF; part++) {
+        lv_style_list_t * list = lv_obj_get_style_list(obj, part);
+        if(list == NULL) break;
+        list->valid_cache = 0;
     }
+
 
     lv_obj_t * child = lv_obj_get_child(obj, NULL);
     while(child) {

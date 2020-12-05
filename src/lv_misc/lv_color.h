@@ -108,9 +108,9 @@ enum {
  * Macros for all existing  color depths
  * to set/get values of the color channels
  *------------------------------------------*/
-# define LV_COLOR_SET_R1(c, v) (c).ch.red = (uint8_t)((v) & 0x1);
-# define LV_COLOR_SET_G1(c, v) (c).ch.green = (uint8_t)((v) & 0x1);
-# define LV_COLOR_SET_B1(c, v) (c).ch.blue = (uint8_t)((v) & 0x1);
+# define LV_COLOR_SET_R1(c, v) (c).ch.red = (uint8_t)((v) & 0x1)
+# define LV_COLOR_SET_G1(c, v) (c).ch.green = (uint8_t)((v) & 0x1)
+# define LV_COLOR_SET_B1(c, v) (c).ch.blue = (uint8_t)((v) & 0x1)
 # define LV_COLOR_SET_A1(c, v)
 
 # define LV_COLOR_GET_R1(c) (c).ch.red
@@ -118,9 +118,9 @@ enum {
 # define LV_COLOR_GET_B1(c) (c).ch.blue
 # define LV_COLOR_GET_A1(c) 1
 
-# define LV_COLOR_SET_R8(c, v) (c).ch.red = (uint8_t)(v) & 0x7U;
-# define LV_COLOR_SET_G8(c, v) (c).ch.green = (uint8_t)(v) & 0x7U;
-# define LV_COLOR_SET_B8(c, v) (c).ch.blue = (uint8_t)(v) & 0x3U;
+# define LV_COLOR_SET_R8(c, v) (c).ch.red = (uint8_t)(v) & 0x7U
+# define LV_COLOR_SET_G8(c, v) (c).ch.green = (uint8_t)(v) & 0x7U
+# define LV_COLOR_SET_B8(c, v) (c).ch.blue = (uint8_t)(v) & 0x3U
 # define LV_COLOR_SET_A8(c, v) do {} while(0)
 
 # define LV_COLOR_GET_R8(c) (c).ch.red
@@ -128,10 +128,10 @@ enum {
 # define LV_COLOR_GET_B8(c) (c).ch.blue
 # define LV_COLOR_GET_A8(c) 0xFF
 
-# define LV_COLOR_SET_R16(c, v) (c).ch.red = (uint8_t)(v) & 0x1FU;
-# define LV_COLOR_SET_G16(c, v) (c).ch.green = (uint8_t)(v) & 0x3FU;
+# define LV_COLOR_SET_R16(c, v) (c).ch.red = (uint8_t)(v) & 0x1FU
+# define LV_COLOR_SET_G16(c, v) (c).ch.green = (uint8_t)(v) & 0x3FU
 # define LV_COLOR_SET_G16_SWAP(c, v) {(c).ch.green_h = (uint8_t)(((v) >> 3) & 0x7); (c).ch.green_l = (uint8_t)((v) & 0x7);}
-# define LV_COLOR_SET_B16(c, v) (c).ch.blue = (uint8_t)(v) & 0x1FU;
+# define LV_COLOR_SET_B16(c, v) (c).ch.blue = (uint8_t)(v) & 0x1FU
 # define LV_COLOR_SET_A16(c, v) do {} while(0)
 
 # define LV_COLOR_GET_R16(c) (c).ch.red
@@ -140,10 +140,10 @@ enum {
 # define LV_COLOR_GET_B16(c) (c).ch.blue
 # define LV_COLOR_GET_A16(c) 0xFF
 
-# define LV_COLOR_SET_R32(c, v) (c).ch.red = (uint32_t)((v) & 0xFF);
-# define LV_COLOR_SET_G32(c, v) (c).ch.green = (uint32_t)((v) & 0xFF);
-# define LV_COLOR_SET_B32(c, v) (c).ch.blue = (uint32_t)((v) & 0xFF);
-# define LV_COLOR_SET_A32(c, v) (c).ch.alpha = (uint32_t)((v) & 0xFF);
+# define LV_COLOR_SET_R32(c, v) (c).ch.red = (uint32_t)((v) & 0xFF)
+# define LV_COLOR_SET_G32(c, v) (c).ch.green = (uint32_t)((v) & 0xFF)
+# define LV_COLOR_SET_B32(c, v) (c).ch.blue = (uint32_t)((v) & 0xFF)
+# define LV_COLOR_SET_A32(c, v) (c).ch.alpha = (uint32_t)((v) & 0xFF)
 
 # define LV_COLOR_GET_R32(c) (c).ch.red
 # define LV_COLOR_GET_G32(c) (c).ch.green
@@ -213,12 +213,12 @@ enum {
  **********************/
 
 typedef union {
+    uint8_t full; /*must be declared first to set all bits of byte via initializer list */
     union {
         uint8_t blue : 1;
         uint8_t green : 1;
         uint8_t red : 1;
     } ch;
-    uint8_t full;
 } lv_color1_t;
 
 typedef union {
@@ -259,15 +259,23 @@ typedef union {
 #if LV_COLOR_DEPTH == 1
 typedef uint8_t lv_color_int_t;
 typedef lv_color1_t lv_color_t;
+#define _LV_COLOR_ZERO_INITIALIZER {0x00}
 #elif LV_COLOR_DEPTH == 8
 typedef uint8_t lv_color_int_t;
 typedef lv_color8_t lv_color_t;
+#define _LV_COLOR_ZERO_INITIALIZER {{0x00, 0x00, 0x00}}
 #elif LV_COLOR_DEPTH == 16
 typedef uint16_t lv_color_int_t;
 typedef lv_color16_t lv_color_t;
+# if LV_COLOR_16_SWAP == 0
+#  define _LV_COLOR_ZERO_INITIALIZER {{0x00, 0x00, 0x00}}
+# else
+#  define _LV_COLOR_ZERO_INITIALIZER {{0x00, 0x00, 0x00, 0x00}}
+# endif
 #elif LV_COLOR_DEPTH == 32
 typedef uint32_t lv_color_int_t;
 typedef lv_color32_t lv_color_t;
+#define _LV_COLOR_ZERO_INITIALIZER {{0x00, 0x00, 0x00, 0x00}}
 #else
 #error "Invalid LV_COLOR_DEPTH in lv_conf.h! Set it to 1, 8, 16 or 32!"
 #endif
@@ -553,9 +561,9 @@ LV_ATTRIBUTE_FAST_MEM static inline void lv_color_mix_with_alpha(lv_color_t bg_c
         /*Save the parameters and the result. If they will be asked again don't compute again*/
         static lv_opa_t fg_opa_save     = 0;
         static lv_opa_t bg_opa_save     = 0;
-        static lv_color_t fg_color_save = {.full = 0};
-        static lv_color_t bg_color_save = {.full = 0};
-        static lv_color_t res_color_saved = {.full = 0};
+        static lv_color_t fg_color_save = _LV_COLOR_ZERO_INITIALIZER;
+        static lv_color_t bg_color_save = _LV_COLOR_ZERO_INITIALIZER;
+        static lv_color_t res_color_saved = _LV_COLOR_ZERO_INITIALIZER;
         static lv_opa_t res_opa_saved = 0;
 
         if(fg_opa != fg_opa_save || bg_opa != bg_opa_save || fg_color.full != fg_color_save.full ||
@@ -600,7 +608,7 @@ static inline uint8_t lv_color_brightness(lv_color_t color)
 /**
 * MSVC compiler's definition of the __cplusplus indicating 199711L regardless to C++ standard version
 * see https://devblogs.microsoft.com/cppblog/msvc-now-correctly-reports-cplusplus
-* so we use _MSC_VER macro unstead of __cplusplus
+* so we use _MSC_VER macro instead of __cplusplus
 */
 #ifdef _MSC_VER
 #if _MSC_VER >= 1900 /* Visual Studio 2015 */
@@ -626,7 +634,7 @@ static inline uint8_t lv_color_brightness(lv_color_t color)
 
 /* The most simple macro to create a color from R,G and B values */
 #if LV_COLOR_DEPTH == 1
-#define LV_COLOR_MAKE(r8, g8, b8) (_LV_COLOR_MAKE_TYPE_HELPER{.full = (uint8_t)((b8 >> 7) | (g8 >> 7) | (r8 >> 7))})
+#define LV_COLOR_MAKE(r8, g8, b8) (_LV_COLOR_MAKE_TYPE_HELPER{(uint8_t)((b8 >> 7) | (g8 >> 7) | (r8 >> 7))})
 #elif LV_COLOR_DEPTH == 8
 #define LV_COLOR_MAKE(r8, g8, b8) (_LV_COLOR_MAKE_TYPE_HELPER{{(uint8_t)((b8 >> 6) & 0x3U), (uint8_t)((g8 >> 5) & 0x7U), (uint8_t)((r8 >> 5) & 0x7U)}})
 #elif LV_COLOR_DEPTH == 16

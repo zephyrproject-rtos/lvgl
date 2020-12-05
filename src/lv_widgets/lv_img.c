@@ -390,20 +390,20 @@ void lv_img_set_zoom(lv_obj_t * img, uint16_t zoom)
     lv_coord_t h = lv_obj_get_height(img);
     lv_area_t a;
     _lv_img_buf_get_transformed_area(&a, w, h, transf_angle, (transf_zoom * ext->zoom) >> 8, &ext->pivot);
-    a.x1 += img->coords.x1;
-    a.y1 += img->coords.y1;
-    a.x2 += img->coords.x1;
-    a.y2 += img->coords.y1;
+    a.x1 += img->coords.x1 - 1;
+    a.y1 += img->coords.y1 - 1;
+    a.x2 += img->coords.x1 + 1;
+    a.y2 += img->coords.y1 + 1;
     lv_obj_invalidate_area(img, &a);
 
     ext->zoom = zoom;
     lv_obj_refresh_ext_draw_pad(img);
 
     _lv_img_buf_get_transformed_area(&a, w, h, transf_angle, (transf_zoom * ext->zoom) >> 8, &ext->pivot);
-    a.x1 += img->coords.x1;
-    a.y1 += img->coords.y1;
-    a.x2 += img->coords.x1;
-    a.y2 += img->coords.y1;
+    a.x1 += img->coords.x1 - 1;
+    a.y1 += img->coords.y1 - 1;
+    a.x2 += img->coords.x1 + 1;
+    a.y2 += img->coords.y1 + 1;
     lv_obj_invalidate_area(img, &a);
 }
 
@@ -706,10 +706,10 @@ static lv_design_res_t lv_img_design(lv_obj_t * img, const lv_area_t * clip_area
             coords_tmp.y1 = zommed_coords.y1;
             coords_tmp.y2 = zommed_coords.y1 + ext->h - 1;
 
-            for(; coords_tmp.y1 <= clip_real.y2; coords_tmp.y1 += zoomed_src_h, coords_tmp.y2 += zoomed_src_h) {
+            for(; coords_tmp.y1 < zommed_coords.y2; coords_tmp.y1 += zoomed_src_h, coords_tmp.y2 += zoomed_src_h) {
                 coords_tmp.x1 = zommed_coords.x1;
                 coords_tmp.x2 = zommed_coords.x1 + ext->w - 1;
-                for(; coords_tmp.x1 <= clip_real.x2; coords_tmp.x1 += zoomed_src_w, coords_tmp.x2 += zoomed_src_w) {
+                for(; coords_tmp.x1 < zommed_coords.x2; coords_tmp.x1 += zoomed_src_w, coords_tmp.x2 += zoomed_src_w) {
                     lv_draw_img(&coords_tmp, &clip_real, ext->src, &img_dsc);
                 }
             }

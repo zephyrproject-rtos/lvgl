@@ -15,6 +15,7 @@
 #include "../lv_core/lv_refr.h"
 #include "../lv_themes/lv_theme.h"
 #include "../lv_misc/lv_txt.h"
+#include "../lv_misc/lv_txt_ap.h"
 
 /*********************
  *      DEFINES
@@ -43,7 +44,6 @@ static bool button_get_tgl_state(lv_btnmatrix_ctrl_t ctrl_bits);
 static uint16_t get_button_from_point(lv_obj_t * btnm, lv_point_t * p);
 static void allocate_btn_areas_and_controls(const lv_obj_t * btnm, const char ** map);
 static void invalidate_button_area(const lv_obj_t * btnm, uint16_t btn_idx);
-static bool maps_are_identical(const char ** map1, const char ** map2);
 static void make_one_button_toggled(lv_obj_t * btnm, uint16_t btn_idx);
 
 /**********************
@@ -152,11 +152,9 @@ void lv_btnmatrix_set_map(lv_obj_t * btnm, const char * map[])
      * set/allocation when map hasn't changed.
      */
     lv_btnmatrix_ext_t * ext = lv_obj_get_ext_attr(btnm);
-    if(!maps_are_identical(ext->map_p, map)) {
 
-        /*Analyze the map and create the required number of buttons*/
-        allocate_btn_areas_and_controls(btnm, map);
-    }
+    /*Analyze the map and create the required number of buttons*/
+    allocate_btn_areas_and_controls(btnm, map);
     ext->map_p = map;
 
     /*Set size and positions of the buttons*/
@@ -322,13 +320,19 @@ void lv_btnmatrix_set_recolor(const lv_obj_t * btnm, bool en)
  * @param btnm pointer to button matrix object
  * @param btn_id 0 based index of the button to modify. (Not counting new lines)
  */
-void lv_btnmatrix_set_btn_ctrl(const lv_obj_t * btnm, uint16_t btn_id, lv_btnmatrix_ctrl_t ctrl)
+void lv_btnmatrix_set_btn_ctrl(lv_obj_t * btnm, uint16_t btn_id, lv_btnmatrix_ctrl_t ctrl)
 {
     LV_ASSERT_OBJ(btnm, LV_OBJX_NAME);
 
     lv_btnmatrix_ext_t * ext = lv_obj_get_ext_attr(btnm);
 
     if(btn_id >= ext->btn_cnt) return;
+
+    /*Uncheck all buttons if required*/
+    if(ext->one_check && (ctrl & LV_BTNMATRIX_CTRL_CHECK_STATE)) {
+        lv_btnmatrix_clear_btn_ctrl_all(btnm, LV_BTNMATRIX_CTRL_CHECK_STATE);
+        ext->btn_id_act = btn_id;
+    }
 
     ext->ctrl_bits[btn_id] |= ctrl;
     invalidate_button_area(btnm, btn_id);
@@ -677,6 +681,10 @@ static lv_design_res_t lv_btnmatrix_design(lv_obj_t * btnm, const lv_area_t * cl
         lv_style_int_t padding_top = lv_obj_get_style_pad_top(btnm, LV_BTNMATRIX_PART_BG);
         lv_style_int_t padding_bottom = lv_obj_get_style_pad_bottom(btnm, LV_BTNMATRIX_PART_BG);
 
+#if LV_USE_ARABIC_PERSIAN_CHARS
+        const size_t txt_ap_size = 256 ;
+        char * txt_ap = _lv_mem_buf_get(txt_ap_size);
+#endif
         for(btn_i = 0; btn_i < ext->btn_cnt; btn_i++, txt_i++) {
             /*Search the next valid text in the map*/
             while(strcmp(ext->map_p[txt_i], "\n") == 0) {
@@ -792,6 +800,16 @@ static lv_design_res_t lv_btnmatrix_design(lv_obj_t * btnm, const lv_area_t * cl
             lv_style_int_t letter_space = draw_label_dsc_act->letter_space;
             lv_style_int_t line_space = draw_label_dsc_act->line_space;
             const char * txt = ext->map_p[txt_i];
+
+#if LV_USE_ARABIC_PERSIAN_CHARS
+            /*Get the size of the Arabic text and process it*/
+            size_t len_ap = _lv_txt_ap_calc_bytes_cnt(txt);
+            if(len_ap < txt_ap_size) {
+                _lv_txt_ap_proc(txt, txt_ap);
+                txt = txt_ap;
+            }
+#endif
+
             lv_point_t txt_size;
             _lv_txt_get_size(&txt_size, txt, font, letter_space,
                              line_space, lv_area_get_width(&area_btnm), txt_flag);
@@ -803,6 +821,10 @@ static lv_design_res_t lv_btnmatrix_design(lv_obj_t * btnm, const lv_area_t * cl
 
             lv_draw_label(&area_tmp, clip_area, draw_label_dsc_act, txt, NULL);
         }
+
+#if LV_USE_ARABIC_PERSIAN_CHARS
+        _lv_mem_buf_release(txt_ap);
+#endif
     }
     else if(mode == LV_DESIGN_DRAW_POST) {
         ancestor_design_f(btnm, clip_area, mode);
@@ -1126,6 +1148,10 @@ static void allocate_btn_areas_and_controls(const lv_obj_t * btnm, const char **
 
     lv_btnmatrix_ext_t * ext = lv_obj_get_ext_attr(btnm);
 
+    /*Do not allocate memory for the same amount of buttons*/
+    if(btn_cnt == ext->btn_cnt) return;
+
+
     if(ext->button_areas != NULL) {
         lv_mem_free(ext->button_areas);
         ext->button_areas = NULL;
@@ -1261,25 +1287,6 @@ static void invalidate_button_area(const lv_obj_t * btnm, uint16_t btn_idx)
     btn_area.y2 += btnm_area.y1;
 
     lv_obj_invalidate_area(btnm, &btn_area);
-}
-
-/**
- * Compares two button matrix maps for equality
- * @param map1 map to compare
- * @param map2 map to compare
- * @return true if maps are identical in length and content
- */
-static bool maps_are_identical(const char ** map1, const char ** map2)
-{
-    if(map1 == map2) return true;
-    if(map1 == NULL || map2 == NULL) return map1 == map2;
-
-    uint16_t i = 0;
-    while(map1[i][0] != '\0' && map2[i][0] != '\0') {
-        if(strcmp(map1[i], map2[i]) != 0) return false;
-        i++;
-    }
-    return map1[i][0] == '\0' && map2[i][0] == '\0';
 }
 
 /**

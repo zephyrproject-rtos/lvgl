@@ -10,8 +10,30 @@
 
 #include <stdint.h>
 
+/* Add ESP-IDF related includes */
+#if defined (ESP_PLATFORM)
+#  include "sdkconfig.h"
+#  include "esp_attr.h"
+#endif
+
+/* Handle special Kconfig options */
+#include "lv_conf_kconfig.h"
+
+#ifdef CONFIG_LV_CONF_SKIP
+#define LV_CONF_SKIP
+#endif
+
+/* If "lv_conf.h" is available from here try to use it later.*/
+#if defined __has_include
+#  if __has_include("lv_conf.h")
+#   ifndef LV_CONF_INCLUDE_SIMPLE
+#    define LV_CONF_INCLUDE_SIMPLE
+#   endif
+#  endif
+#endif
+
 /*If lv_conf.h is not skipped include it*/
-#if !defined(LV_CONF_SKIP) && !defined(CONFIG_LV_CONF_SKIP)
+#if !defined(LV_CONF_SKIP)
 #  if defined(LV_CONF_PATH)											/*If there is a path defined for lv_conf.h use it*/
 #    define __LV_TO_STR_AUX(x) #x
 #    define __LV_TO_STR(x) __LV_TO_STR_AUX(x)
@@ -476,6 +498,37 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h" */
 #  endif
 #endif
 
+/*1: Use PXP for CPU off-load on NXP RTxxx platforms */
+#ifndef LV_USE_GPU_NXP_PXP
+#  ifdef CONFIG_LV_USE_GPU_NXP_PXP
+#    define LV_USE_GPU_NXP_PXP CONFIG_LV_USE_GPU_NXP_PXP
+#  else
+#    define  LV_USE_GPU_NXP_PXP      0
+#  endif
+#endif
+
+/*1: Add default bare metal and FreeRTOS interrupt handling routines for PXP (lv_gpu_nxp_pxp_osa.c)
+ *   and call lv_gpu_nxp_pxp_init() automatically during lv_init(). Note that symbol FSL_RTOS_FREE_RTOS
+ *   has to be defined in order to use FreeRTOS OSA, otherwise bare-metal implementation is selected.
+ *0: lv_gpu_nxp_pxp_init() has to be called manually before lv_init()
+ * */
+#ifndef LV_USE_GPU_NXP_PXP_AUTO_INIT
+#  ifdef CONFIG_LV_USE_GPU_NXP_PXP_AUTO_INIT
+#    define LV_USE_GPU_NXP_PXP_AUTO_INIT CONFIG_LV_USE_GPU_NXP_PXP_AUTO_INIT
+#  else
+#    define  LV_USE_GPU_NXP_PXP_AUTO_INIT 0
+#  endif
+#endif
+
+/*1: Use VG-Lite for CPU offload on NXP RTxxx platforms */
+#ifndef LV_USE_GPU_NXP_VG_LITE
+#  ifdef CONFIG_LV_USE_GPU_NXP_VG_LITE
+#    define LV_USE_GPU_NXP_VG_LITE CONFIG_LV_USE_GPU_NXP_VG_LITE
+#  else
+#    define  LV_USE_GPU_NXP_VG_LITE   0
+#  endif
+#endif
+
 /* 1: Enable file system (might be required for images */
 #ifndef LV_USE_FILESYSTEM
 #  ifdef CONFIG_LV_USE_FILESYSTEM
@@ -600,9 +653,20 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h" */
 #  endif
 #endif
 
+/* Required alignment size for buffers */
+#ifndef LV_ATTRIBUTE_MEM_ALIGN_SIZE
+#  ifdef CONFIG_LV_ATTRIBUTE_MEM_ALIGN_SIZE
+#    define LV_ATTRIBUTE_MEM_ALIGN_SIZE CONFIG_LV_ATTRIBUTE_MEM_ALIGN_SIZE
+#  else
+#    define  LV_ATTRIBUTE_MEM_ALIGN_SIZE
+#  endif
+#endif
+
 /* With size optimization (-Os) the compiler might not align data to
- * 4 or 8 byte boundary. This alignment will be explicitly applied where needed.
- * E.g. __attribute__((aligned(4))) */
+ * 4 or 8 byte boundary. Some HW may need even 32 or 64 bytes.
+ * This alignment will be explicitly applied where needed.
+ * LV_ATTRIBUTE_MEM_ALIGN_SIZE should be used to specify required align size.
+ * E.g. __attribute__((aligned(LV_ATTRIBUTE_MEM_ALIGN_SIZE))) */
 #ifndef LV_ATTRIBUTE_MEM_ALIGN
 #  ifdef CONFIG_LV_ATTRIBUTE_MEM_ALIGN
 #    define LV_ATTRIBUTE_MEM_ALIGN CONFIG_LV_ATTRIBUTE_MEM_ALIGN
@@ -1003,6 +1067,13 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h" */
 #    define LV_FONT_UNSCII_8 CONFIG_LV_FONT_UNSCII_8
 #  else
 #    define  LV_FONT_UNSCII_8     0
+#  endif
+#endif
+#ifndef LV_FONT_UNSCII_16
+#  ifdef CONFIG_LV_FONT_UNSCII_16
+#    define LV_FONT_UNSCII_16 CONFIG_LV_FONT_UNSCII_16
+#  else
+#    define  LV_FONT_UNSCII_16     0
 #  endif
 #endif
 
@@ -1848,7 +1919,15 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h" */
 #    define  LV_TABLE_COL_MAX    12
 #  endif
 #endif
+#ifndef LV_TABLE_CELL_STYLE_CNT
+#  ifdef CONFIG_LV_TABLE_CELL_STYLE_CNT
+#    define LV_TABLE_CELL_STYLE_CNT CONFIG_LV_TABLE_CELL_STYLE_CNT
+#  else
+#    define  LV_TABLE_CELL_STYLE_CNT 4
+#  endif
 #endif
+#endif
+
 
 /*Tab (dependencies: lv_page, lv_btnm)*/
 #ifndef LV_USE_TABVIEW
@@ -1914,7 +1993,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h" */
 
 
 /*If running without lv_conf.h add typdesf with default value*/
-#if defined(LV_CONF_SKIP) || defined(CONFIG_LV_CONF_SKIP)
+#if defined(LV_CONF_SKIP)
 
   /* Type of coordinates. Should be `int16_t` (or `int32_t` for extreme cases) */
   typedef int16_t lv_coord_t;
