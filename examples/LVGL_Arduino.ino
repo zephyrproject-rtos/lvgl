@@ -105,9 +105,10 @@ void setup()
     indev_drv.read_cb = my_touchpad_read;
     lv_indev_drv_register(&indev_drv);
 
-		/* Try an example from the lv_examples repository
-		 * https://github.com/lvgl/lv_examples*/
-		lv_ex_btn_1();
+    /* Try an example from the lv_examples repository
+     * https://github.com/lvgl/lv_examples
+     */
+    lv_ex_btn_1();
 }
 
 
