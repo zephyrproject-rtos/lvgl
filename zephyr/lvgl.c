@@ -29,6 +29,8 @@ static lv_indev_drv_t indev_drv;
 
 static lv_disp_draw_buf_t disp_buf;
 
+#define DISPLAY_NODE DT_CHOSEN(zephyr_display)
+
 #define BUFFER_SIZE (CONFIG_LV_Z_BITS_PER_PIXEL * ((CONFIG_LV_Z_VDB_SIZE * \
 			CONFIG_LV_Z_HOR_RES_MAX * CONFIG_LV_Z_VER_RES_MAX) / 100) / 8)
 
@@ -326,12 +328,12 @@ static int lvgl_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	const struct device *display_dev =
-		device_get_binding(CONFIG_LV_Z_DISPLAY_DEV_NAME);
+	const struct device *display_dev = DEVICE_DT_GET(DISPLAY_NODE);
+
 	int err = 0;
 
-	if (display_dev == NULL) {
-		LOG_ERR("Display device not found.");
+	if (!device_is_ready(display_dev)) {
+		LOG_ERR("Display device not ready.");
 		return -ENODEV;
 	}
 
