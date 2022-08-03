@@ -191,18 +191,7 @@ zephyr_library_sources(
     ../src/extra/others/monkey/lv_monkey.c
     ../src/extra/others/gridnav/lv_gridnav.c
     ../src/extra/others/snapshot/lv_snapshot.c
-
-    lvgl.c
-    lvgl_display.c
-    lvgl_display_mono.c
-    lvgl_display_16bit.c
-    lvgl_display_24bit.c
-    lvgl_display_32bit.c
-    lvgl_display_mono.c
 )
-
-zephyr_library_sources_ifdef(CONFIG_LV_Z_USE_FILESYSTEM lvgl_fs.c)
-zephyr_library_sources_ifdef(CONFIG_LV_Z_MEM_POOL_SYS_HEAP lvgl_mem.c)
 
 zephyr_library_link_libraries(LVGL)
 target_link_libraries(LVGL INTERFACE zephyr_interface)
