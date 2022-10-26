@@ -82,10 +82,15 @@ zephyr_library_sources(
     ../src/draw/lv_img_decoder.c
     ../src/draw/lv_draw_img.c
     ../src/draw/lv_img_cache.c
-    ../src/draw/nxp_vglite/lv_gpu_nxp_vglite.c
+    ../src/draw/nxp/lv_gpu_nxp.c
+    ../src/draw/nxp/vglite/lv_draw_vglite_arc.c
+    ../src/draw/nxp/vglite/lv_draw_vglite_blend.c
+    ../src/draw/nxp/vglite/lv_draw_vglite_rect.c
+    ../src/draw/nxp/vglite/lv_gpu_nxp_vglite.c
     ../src/draw/lv_draw_line.c
-    ../src/draw/nxp_pxp/lv_gpu_nxp_pxp.c
-    ../src/draw/nxp_pxp/lv_gpu_nxp_pxp_osa.c
+    ../src/draw/nxp/pxp/lv_draw_pxp_blend.c
+    ../src/draw/nxp/pxp/lv_gpu_nxp_pxp.c
+    ../src/draw/nxp/pxp/lv_gpu_nxp_pxp_osa.c
     ../src/draw/lv_draw.c
     ../src/draw/sdl/lv_draw_sdl_img.c
     ../src/draw/sdl/lv_draw_sdl_composite.c
@@ -100,8 +105,10 @@ zephyr_library_sources(
     ../src/draw/sdl/lv_draw_sdl_stack_blur.c
     ../src/draw/sdl/lv_draw_sdl_mask.c
     ../src/draw/sdl/lv_draw_sdl_line.c
+    ../src/draw/sdl/lv_draw_sdl_layer.c
     ../src/draw/lv_img_buf.c
     ../src/draw/lv_draw_mask.c
+    ../src/draw/swm341_dma2d/lv_gpu_swm341_dma2d.c
     ../src/draw/stm32_dma2d/lv_gpu_stm32_dma2d.c
     ../src/draw/lv_draw_arc.c
     ../src/draw/lv_draw_rect.c
@@ -115,6 +122,12 @@ zephyr_library_sources(
     ../src/draw/sw/lv_draw_sw_blend.c
     ../src/draw/sw/lv_draw_sw_dither.c
     ../src/draw/sw/lv_draw_sw_gradient.c
+    ../src/draw/sw/lv_draw_sw_layer.c
+    ../src/draw/sw/lv_draw_sw_transform.c
+    ../src/draw/arm2d/lv_gpu_arm2d.c
+    ../src/draw/lv_draw_layer.c
+    ../src/draw/lv_draw_transform.c
+
 
     ../src/font/lv_font_montserrat_32.c
     ../src/font/lv_font.c
@@ -188,6 +201,11 @@ zephyr_library_sources(
     ../src/extra/widgets/keyboard/lv_keyboard.c
     ../src/extra/layouts/grid/lv_grid.c
     ../src/extra/layouts/flex/lv_flex.c
+    ../src/extra/others/fragment/lv_fragment.c
+    ../src/extra/others/fragment/lv_fragment_manager.c
+    ../src/extra/others/ime/lv_ime_pinyin.c
+    ../src/extra/others/imgfont/lv_imgfont.c
+    ../src/extra/others/msg/lv_msg.c
     ../src/extra/others/monkey/lv_monkey.c
     ../src/extra/others/gridnav/lv_gridnav.c
     ../src/extra/others/snapshot/lv_snapshot.c
