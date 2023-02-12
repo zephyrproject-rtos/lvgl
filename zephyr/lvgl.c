@@ -221,6 +221,7 @@ static void lvgl_pointer_kscan_read(lv_indev_drv_t *drv, lv_indev_data_t *data)
 	};
 
 	if (k_msgq_get(&kscan_msgq, &curr, K_NO_WAIT) != 0) {
+		prev.state = LV_INDEV_STATE_REL;
 		goto set_and_release;
 	}
 
