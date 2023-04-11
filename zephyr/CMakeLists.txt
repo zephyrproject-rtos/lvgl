@@ -8,6 +8,30 @@ if(CONFIG_LVGL)
 set(ZEPHYR_CURRENT_LIBRARY lvgl)
 include_directories(${ZEPHYR_BASE}/lib/gui/lvgl)
 zephyr_include_directories(../src/)
+zephyr_include_directories_ifdef(CONFIG_LV_USE_DEMO_BENCHMARK 
+    ../demos/
+    ../demos/benchmark
+)
+
+zephyr_include_directories_ifdef(CONFIG_LV_USE_DEMO_KEYPAD_AND_ENCODER
+    ../demos/
+    ../demos/keypad_encoder
+)
+
+zephyr_include_directories_ifdef(CONFIG_LV_USE_DEMO_MUSIC
+    ../demos/
+    ../demos/music
+)
+
+zephyr_include_directories_ifdef(CONFIG_LV_USE_DEMO_STRESS
+    ../demos/
+    ../demos/stress
+)
+
+zephyr_include_directories_ifdef(CONFIG_LV_USE_DEMO_WIDGETS
+    ../demos/
+    ../demos/widgets
+)
 
 zephyr_interface_library_named(LVGL)
 
@@ -203,6 +227,87 @@ zephyr_library_sources(
 
 zephyr_library_sources_ifdef(CONFIG_LV_Z_USE_FILESYSTEM lvgl_fs.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_MEM_POOL_SYS_HEAP lvgl_mem.c)
+
+zephyr_library_sources_ifdef(CONFIG_LV_USE_DEMO_BENCHMARK
+    ../demos/benchmark/lv_demo_benchmark.c
+    ../demos/benchmark/assets/img_benchmark_cogwheel_alpha16.c
+    ../demos/benchmark/assets/img_benchmark_cogwheel_argb.c
+    ../demos/benchmark/assets/img_benchmark_cogwheel_chroma_keyed.c
+    ../demos/benchmark/assets/img_benchmark_cogwheel_indexed16.c
+    ../demos/benchmark/assets/img_benchmark_cogwheel_rgb.c
+    ../demos/benchmark/assets/lv_font_bechmark_montserrat_12_compr_az.c.c
+    ../demos/benchmark/assets/lv_font_bechmark_montserrat_16_compr_az.c.c
+    ../demos/benchmark/assets/lv_font_bechmark_montserrat_28_compr_az.c.c
+)
+
+zephyr_library_sources_ifdef(CONFIG_LV_USE_DEMO_KEYPAD_AND_ENCODER
+    ../demos/keypad_encoder/lv_demo_keypad_encoder.c
+)
+
+zephyr_library_sources_ifdef(CONFIG_LV_USE_DEMO_MUSIC
+    ../demos/music/lv_demo_music_list.c
+    ../demos/music/lv_demo_music_main.c
+    ../demos/music/lv_demo_music.c
+    ../demos/music/assets/img_lv_demo_music_btn_corner_large.c
+    ../demos/music/assets/img_lv_demo_music_btn_list_pause.c
+    ../demos/music/assets/img_lv_demo_music_btn_list_pause_large.c
+    ../demos/music/assets/img_lv_demo_music_btn_list_play.c
+    ../demos/music/assets/img_lv_demo_music_btn_list_play_large.c
+    ../demos/music/assets/img_lv_demo_music_btn_loop.c
+    ../demos/music/assets/img_lv_demo_music_btn_loop_large.c
+    ../demos/music/assets/img_lv_demo_music_btn_next.c
+    ../demos/music/assets/img_lv_demo_music_btn_next_large.c
+    ../demos/music/assets/img_lv_demo_music_btn_pause.c
+    ../demos/music/assets/img_lv_demo_music_btn_pause_large.c
+    ../demos/music/assets/img_lv_demo_music_btn_play.c
+    ../demos/music/assets/img_lv_demo_music_btn_play_large.c
+    ../demos/music/assets/img_lv_demo_music_btn_prev.c
+    ../demos/music/assets/img_lv_demo_music_btn_prev_large.c
+    ../demos/music/assets/img_lv_demo_music_btn_rnd.c
+    ../demos/music/assets/img_lv_demo_music_btn_rnd_large.c
+    ../demos/music/assets/img_lv_demo_music_corner_left.c
+    ../demos/music/assets/img_lv_demo_music_corner_left_large.c
+    ../demos/music/assets/img_lv_demo_music_corner_right.c
+    ../demos/music/assets/img_lv_demo_music_corner_right_large.c
+    ../demos/music/assets/img_lv_demo_music_cover_1.c
+    ../demos/music/assets/img_lv_demo_music_cover_1_large.c
+    ../demos/music/assets/img_lv_demo_music_cover_2.c
+    ../demos/music/assets/img_lv_demo_music_cover_2_large.c
+    ../demos/music/assets/img_lv_demo_music_cover_3.c
+    ../demos/music/assets/img_lv_demo_music_cover_3_large.c
+    ../demos/music/assets/img_lv_demo_music_icon_1.c
+    ../demos/music/assets/img_lv_demo_music_icon_1_large.c
+    ../demos/music/assets/img_lv_demo_music_icon_2.c
+    ../demos/music/assets/img_lv_demo_music_icon_2_large.c
+    ../demos/music/assets/img_lv_demo_music_icon_3.c
+    ../demos/music/assets/img_lv_demo_music_icon_3_large.c
+    ../demos/music/assets/img_lv_demo_music_icon_4.c
+    ../demos/music/assets/img_lv_demo_music_icon_4_large.c
+    ../demos/music/assets/img_lv_demo_music_list_border.c
+    ../demos/music/assets/img_lv_demo_music_list_border_large.c
+    ../demos/music/assets/img_lv_demo_music_logo.c
+    ../demos/music/assets/img_lv_demo_music_slider_knob.c
+    ../demos/music/assets/img_lv_demo_music_slider_knob_large.c
+    ../demos/music/assets/img_lv_demo_music_wave_bottom.c
+    ../demos/music/assets/img_lv_demo_music_wave_bottom_large.c
+    ../demos/music/assets/img_lv_demo_music_wave_top.c
+    ../demos/music/assets/img_lv_demo_music_wave_top_large.c
+)
+
+zephyr_library_sources_ifdef(CONFIG_LV_USE_DEMO_STRESS
+    ../demos/stress/lv_demo_stress.c
+    ../demos/stress/assets/lv_font_montserrat_12_compr_az.c
+    ../demos/stress/assets/lv_font_montserrat_16_compr_az.c
+    ../demos/stress/assets/lv_font_montserrat_28_compr_az.c
+)
+
+zephyr_library_sources_ifdef(CONFIG_LV_USE_DEMO_WIDGETS
+    ../demos/widgets/lv_demo_widgets.c
+    ../demos/widgets/assets/img_clothes.c
+    ../demos/widgets/assets/img_demo_widgets_avatar.c
+    ../demos/widgets/assets/img_lvgl_logo.c
+    ../demos/widgets/assets/img_clothes.c
+)
 
 zephyr_library_link_libraries(LVGL)
 target_link_libraries(LVGL INTERFACE zephyr_interface)
