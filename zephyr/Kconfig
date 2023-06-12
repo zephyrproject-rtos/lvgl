@@ -18,6 +18,31 @@ config LV_Z_USE_FILESYSTEM
 	help
 	  Enable LittlevGL file system
 
+config LV_Z_FLUSH_THREAD
+	bool "Flush LVGL frames in a separate thread"
+	help
+	  Flush LVGL frames in a separate thread, while the primary thread
+	  renders the next LVGL frame. This feature requires that the
+	  lv_task_handler call be made from a preemptable thread for best
+	  performance.
+
+if LV_Z_FLUSH_THREAD
+
+config LV_Z_FLUSH_THREAD_STACK_SIZE
+	int "Stack size for flushing thread"
+	default 1024
+	help
+	  Stack size for LVGL flush thread, which will call display_write
+
+config LV_Z_FLUSH_THREAD_PRIO
+	int "LVGL flush thread priority"
+	default 0
+	help
+	  Cooperative priority of LVGL flush thread.
+
+endif # LV_Z_FLUSH_THREAD
+
+
 rsource "../Kconfig"
 rsource "Kconfig.memory"
 rsource "Kconfig.input"
