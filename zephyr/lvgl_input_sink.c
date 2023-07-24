@@ -11,6 +11,9 @@
 #ifdef CONFIG_LV_Z_POINTER_KSCAN
 #include <zephyr/drivers/kscan.h>
 #endif
+#ifdef CONFIG_LV_Z_POINTER_INPUT
+#include <zephyr/input/input.h>
+#endif
 #include <lvgl.h>
 #include "lvgl_display.h"
 
@@ -22,8 +25,10 @@ LOG_MODULE_DECLARE(lvgl);
 static lv_indev_drv_t indev_drv;
 
 #ifdef CONFIG_LV_Z_POINTER_KSCAN
-#define KSCAN_NODE DT_CHOSEN(zephyr_keyboard_scan)
-#endif /* CONFIG_LV_Z_POINTER_KSCAN */
+#define POINTER_DEV_NODE DT_CHOSEN(zephyr_keyboard_scan)
+#elif CONFIG_LV_Z_POINTER_INPUT
+#define POINTER_DEV_NODE DT_CHOSEN(zephyr_touch_input)
+#endif
 
 K_MSGQ_DEFINE(pointer_msgq, sizeof(lv_indev_data_t),
 	      CONFIG_LV_Z_POINTER_DRIVER_MSGQ_COUNT, 4);
@@ -46,6 +51,37 @@ static void lvgl_pointer_kscan_callback(const struct device *dev,
 }
 
 #endif /* CONFIG_LV_Z_POINTER_KSCAN */
+
+#ifdef CONFIG_LV_Z_POINTER_INPUT
+static void lvgl_pointer_input_callback(struct input_event *evt)
+{
+	static lv_indev_data_t pointer_data = {0};
+
+	switch (evt->code) {
+	case INPUT_ABS_X:
+		pointer_data.point.x = evt->value;
+		break;
+	case INPUT_ABS_Y:
+		pointer_data.point.y = evt->value;
+		break;
+	case INPUT_BTN_TOUCH:
+		pointer_data.state = evt->value ?
+				LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
+		break;
+	}
+
+	if (evt->sync) {
+		LOG_ERR("input event: %3d %3d %d", pointer_data.point.x,
+			pointer_data.point.y, pointer_data.state);
+		if (k_msgq_put(&pointer_msgq, &pointer_data, K_NO_WAIT) != 0)
+			LOG_DBG("Could not put input data into queue");
+	}
+}
+
+INPUT_LISTENER_CB_DEFINE(DEVICE_DT_GET(POINTER_DEV_NODE),
+						lvgl_pointer_input_callback);
+
+#endif /* CONFIG_LV_Z_POINTER_INPUT */
 
 static void lvgl_pointer_read(lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
@@ -138,15 +174,15 @@ set_and_release:
 
 int lvgl_pointer_drv_init(void)
 {
-#ifdef CONFIG_LV_Z_POINTER_KSCAN
-	const struct device *kscan_dev = DEVICE_DT_GET(KSCAN_NODE);
+	const struct device *pointer_dev = DEVICE_DT_GET(POINTER_DEV_NODE);
 
-	if (!device_is_ready(kscan_dev)) {
-		LOG_ERR("Keyboard scan device not ready.");
+	if (!device_is_ready(pointer_dev)) {
+		LOG_ERR("Pointer device not ready.");
 		return -ENODEV;
 	}
 
-	if (kscan_config(kscan_dev, lvgl_pointer_kscan_callback) < 0) {
+#ifdef CONFIG_LV_Z_POINTER_KSCAN
+	if (kscan_config(pointer_dev, lvgl_pointer_kscan_callback) < 0) {
 		LOG_ERR("Could not configure keyboard scan device.");
 		return -ENODEV;
 	}
@@ -161,7 +197,7 @@ int lvgl_pointer_drv_init(void)
 		return -EPERM;
 	}
 #ifdef CONFIG_LV_Z_POINTER_KSCAN
-	kscan_enable_callback(kscan_dev);
+	kscan_enable_callback(pointer_dev);
 #endif /* CONFIG_LV_Z_POINTER_KSCAN */
 
 	return 0;
