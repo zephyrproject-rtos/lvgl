@@ -59,3 +59,16 @@ config LV_Z_POINTER_DRIVER_INVERT_Y
 endif # LV_Z_POINTER
 
 endmenu
+
+config LV_Z_ENCODER
+	bool "Use encoder lvgl input device"
+
+if LV_Z_ENCODER
+
+config LV_Z_ENCODER_DRIVER_MSGQ_COUNT
+	int "Encoder message queue count maximum"
+	default 4
+	help
+	  Maximum number of items in the encoder message queue.
+
+endif # LV_Z_ENCODER

@@ -8,7 +8,6 @@
 #include <zephyr/kernel.h>
 #include <lvgl.h>
 #include "lvgl_display.h"
-#include "lvgl_input_sink.h"
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
 #include "lvgl_fs.h"
 #endif
@@ -238,10 +237,6 @@ static int lvgl_init(void)
 		LOG_ERR("Failed to register display device.");
 		return -EPERM;
 	}
-
-#ifdef CONFIG_LV_Z_POINTER
-	lvgl_pointer_drv_init();
-#endif /* CONFIG_LV_Z_POINTER */
 
 	return 0;
 }
