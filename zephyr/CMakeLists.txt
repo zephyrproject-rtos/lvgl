@@ -215,6 +215,7 @@ zephyr_library_sources(
     lvgl_display_24bit.c
     lvgl_display_32bit.c
     lvgl_display_mono.c
+    lvgl_input_sink.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_LV_Z_USE_FILESYSTEM lvgl_fs.c)
