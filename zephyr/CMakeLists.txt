@@ -8,6 +8,7 @@ if(CONFIG_LVGL)
 set(ZEPHYR_CURRENT_LIBRARY lvgl)
 include_directories(${ZEPHYR_BASE}/lib/gui/lvgl)
 zephyr_include_directories(../src/)
+zephyr_include_directories(include)
 
 zephyr_interface_library_named(LVGL)
 

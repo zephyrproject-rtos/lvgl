@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "lvgl_input_sink.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/display.h>
@@ -14,7 +16,6 @@
 #if defined(CONFIG_LV_Z_POINTER_INPUT) || defined(CONFIG_LV_Z_ENCODER)
 #include <zephyr/input/input.h>
 #endif
-#include <lvgl.h>
 #include "lvgl_display.h"
 
 #include <zephyr/logging/log.h>
@@ -207,6 +208,19 @@ LVGL_INPUT_DEVICE_DEFINE(DEVICE_DT_GET(POINTER_DEV_NODE), LV_INDEV_TYPE_POINTER,
 DT_FOREACH_STATUS_OKAY(gpio_qdec, LV_Z_ENCODER_DEFINE)
 
 #endif /* CONFIG_LV_Z_ENCODER */
+
+lv_indev_t *lvgl_get_mapped_indev(const struct device *dev)
+{
+	lv_indev_t *indev = NULL;
+
+	STRUCT_SECTION_FOREACH(lvgl_input_device, lvgl_mapped_input_dev) {
+		if (lvgl_mapped_input_dev->dev == dev) {
+			indev = lvgl_mapped_input_dev->indev;
+		}
+	}
+
+	return indev;
+}
 
 static int lvgl_input_sink_init(void)
 {
