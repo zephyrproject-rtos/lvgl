@@ -209,6 +209,33 @@ DT_FOREACH_STATUS_OKAY(gpio_qdec, LV_Z_ENCODER_DEFINE)
 
 #endif /* CONFIG_LV_Z_ENCODER */
 
+#ifdef CONFIG_LV_Z_BUTTON
+
+#define BUTTON_MSGQ(n) button_msgq_##n
+
+#define LV_Z_BUTTON_DEFINE(n)                                                                      \
+	K_MSGQ_DEFINE(button_msgq_##n, sizeof(lv_indev_data_t),                                    \
+		      CONFIG_LV_Z_BUTTON_DRIVER_MSGQ_COUNT, 4);                                    \
+	static void button_input_cb_##n(struct input_event *evt)                                   \
+	{                                                                                          \
+		lv_indev_data_t data = {.btn_id = evt->value,                                      \
+					.state = evt->state ? LV_INDEV_STATE_PR                    \
+							    : LV_INDEV_STATE_REL};                 \
+		if (k_msgq_put(&BUTTON_MSGQ(n), &data, K_NO_WAIT) != 0)                            \
+			LOG_DBG("Could not put button data into queue");                           \
+	}                                                                                          \
+	void button_read_##n(lv_indev_drv_t *drv, lv_indev_data_t *data)                           \
+	{                                                                                          \
+		k_msgq_get(&BUTTON_MSGQ(n), data, K_NO_WAIT);                                      \
+		data->continue_reading = k_msgq_num_used_get(&BUTTON_MSGQ(n)) > 0;                 \
+	}                                                                                          \
+	INPUT_LISTENER_CB_DEFINE(DEVICE_DT_GET(n), button_input_cb_##n);                           \
+	LVGL_INPUT_DEVICE_DEFINE(DEVICE_DT_GET(n), LV_INDEV_TYPE_BUTTON, button_read_##n);
+
+DT_FOREACH_STATUS_OKAY(gpio_keys, LV_Z_BUTTON_DEFINE)
+
+#endif /* CONFIG_LV_Z_BUTTON */
+
 lv_indev_t *lvgl_get_mapped_indev(const struct device *dev)
 {
 	lv_indev_t *indev = NULL;

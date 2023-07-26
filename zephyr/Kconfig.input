@@ -72,3 +72,14 @@ config LV_Z_ENCODER_DRIVER_MSGQ_COUNT
 	  Maximum number of items in the encoder message queue.
 
 endif # LV_Z_ENCODER
+
+
+config LV_Z_BUTTON
+
+config LV_Z_BUTTON_DRIVER_MSGQ_COUNT
+	int "Button message queue count maximum"
+	default 4
+	help
+	  Maximum number of items in the button message queue.
+
+endif # LV_Z_BUTTON
