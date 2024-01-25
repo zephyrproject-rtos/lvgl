@@ -6,274 +6,123 @@ if(ESP_PLATFORM)
 
 else()
 
-cmake_minimum_required(VERSION 3.13)
-project(lvgl_tests LANGUAGES C)
+cmake_minimum_required(VERSION 3.16)
+project(lvgl_tests LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_C_STANDARD 99)
+
+set(FLAG_CHECK_WHITELIST --coverage -fsanitize=address)
+
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
+function(filter_compiler_options lang options_out)
+    set(options ${ARGN})
+    foreach(option ${options})
+        if (option IN_LIST FLAG_CHECK_WHITELIST)
+            list(APPEND ${options_out} ${option})
+            continue()
+        endif ()
+
+        string(TOUPPER FLAG_SUPPORTED_FOR_${lang}_${option} option_var_name)
+
+        if (${lang} STREQUAL C)
+            check_c_compiler_flag(${option} ${option_var_name})
+        elseif (${lang} STREQUAL CXX)
+            check_cxx_compiler_flag(${option} ${option_var_name})
+        else()
+            message(FATAL_ERROR "Unknown language ${lang}")
+        endif ()
+        if(${option_var_name})
+            list(APPEND ${options_out} ${option})
+        endif()
+    endforeach()
+    set(${options_out} ${${options_out}} PARENT_SCOPE)
+endfunction()
+
+find_program(VALGRIND_EXECUTABLE valgrind)
+if (VALGRIND_EXECUTABLE)
+    set(MEMORYCHECK_COMMAND ${VALGRIND_EXECUTABLE})
+    set(MEMORYCHECK_COMMAND_OPTIONS --error-exitcode=1)
+endif()
 
 include(CTest)
 
 set(LVGL_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(LVGL_TEST_COMMON_EXAMPLE_OPTIONS
-    -DLV_BUILD_EXAMPLES=1
-    -DLV_USE_DEMO_WIDGETS=1
-    -DLV_USE_DEMO_STRESS=1
+
+set(LVGL_TEST_OPTIONS_VG_LITE
+    -DLV_TEST_OPTION=6
 )
 
 set(LVGL_TEST_OPTIONS_MINIMAL_MONOCHROME
-    -DLV_COLOR_DEPTH=1
-    -DLV_MEM_SIZE=65535
-    -DLV_DPI_DEF=40
-    -DLV_DRAW_COMPLEX=0
-    -DLV_USE_METER=0
-    -DLV_USE_LOG=1
-    -DLV_USE_ASSERT_NULL=0
-    -DLV_USE_ASSERT_MALLOC=0
-    -DLV_USE_ASSERT_MEM_INTEGRITY=0
-    -DLV_USE_ASSERT_OBJ=0
-    -DLV_USE_ASSERT_STYLE=0
-    -DLV_USE_USER_DATA=0
-    -DLV_FONT_UNSCII_8=1
-    -DLV_USE_BIDI=0
-    -DLV_USE_ARABIC_PERSIAN_CHARS=0
-    -DLV_BUILD_EXAMPLES=1
-    -DLV_FONT_DEFAULT=&lv_font_montserrat_14
-    -DLV_USE_PNG=1
-    -DLV_USE_BMP=1
-    -DLV_USE_GIF=1
-    -DLV_USE_QRCODE=1
+    -DLV_TEST_OPTION=1
 )
 
 set(LVGL_TEST_OPTIONS_NORMAL_8BIT
-    -DLV_COLOR_DEPTH=8
-    -DLV_MEM_SIZE=65535
-    -DLV_DPI_DEF=40
-    -DLV_DRAW_COMPLEX=1
-    -DLV_USE_LOG=1
-    -DLV_USE_ASSERT_NULL=0
-    -DLV_USE_ASSERT_MALLOC=0
-    -DLV_USE_ASSERT_MEM_INTEGRITY=0
-    -DLV_USE_ASSERT_OBJ=0
-    -DLV_USE_ASSERT_STYLE=0
-    -DLV_USE_USER_DATA=1
-    -DLV_FONT_UNSCII_8=1
-    -DLV_USE_FONT_SUBPX=1
-    -DLV_USE_BIDI=0
-    -DLV_USE_ARABIC_PERSIAN_CHARS=0
-    ${LVGL_TEST_COMMON_EXAMPLE_OPTIONS}
-    -DLV_FONT_DEFAULT=&lv_font_montserrat_14
-    -DLV_USE_PNG=1
-    -DLV_USE_BMP=1
-    -DLV_USE_SJPG=1
-    -DLV_USE_GIF=1
-    -DLV_USE_QRCODE=1
+    -DLV_TEST_OPTION=2
 )
 
 set(LVGL_TEST_OPTIONS_16BIT
-    -DLV_COLOR_DEPTH=16
-    -DLV_COLOR_16_SWAP=0
-    -DLV_MEM_SIZE=65536
-    -DLV_DPI_DEF=40
-    -DLV_DRAW_COMPLEX=1
-    -DLV_DITHER_GRADIENT=1
-    -DLV_USE_LOG=1
-    -DLV_USE_ASSERT_NULL=0
-    -DLV_USE_ASSERT_MALLOC=0
-    -DLV_USE_ASSERT_MEM_INTEGRITY=0
-    -DLV_USE_ASSERT_OBJ=0
-    -DLV_USE_ASSERT_STYLE=0
-    -DLV_USE_USER_DATA=1
-    -DLV_FONT_UNSCII_8=1
-    -DLV_USE_FONT_SUBPX=1
-    -DLV_USE_BIDI=0
-    -DLV_USE_ARABIC_PERSIAN_CHARS=0
-    ${LVGL_TEST_COMMON_EXAMPLE_OPTIONS}
-    -DLV_FONT_DEFAULT=&lv_font_montserrat_14
-    -DLV_USE_PNG=1
-    -DLV_USE_BMP=1
-    -DLV_USE_SJPG=1
-    -DLV_USE_GIF=1
-    -DLV_USE_QRCODE=1
+    -DLV_TEST_OPTION=3
 )
 
-set(LVGL_TEST_OPTIONS_16BIT_SWAP
-    -DLV_COLOR_DEPTH=16
-    -DLV_COLOR_16_SWAP=1
-    -DLV_MEM_SIZE=65536
-    -DLV_DPI_DEF=40
-    -DLV_DRAW_COMPLEX=1
-    -DLV_DITHER_GRADIENT=1
-    -DLV_DITHER_ERROR_DIFFUSION=1
-    -DLV_GRAD_CACHE_DEF_SIZE=8*1024
-    -DLV_USE_LOG=1
-    -DLV_USE_ASSERT_NULL=0
-    -DLV_USE_ASSERT_MALLOC=0
-    -DLV_USE_ASSERT_MEM_INTEGRITY=0
-    -DLV_USE_ASSERT_OBJ=0
-    -DLV_USE_ASSERT_STYLE=0
-    -DLV_USE_USER_DATA=1
-    -DLV_FONT_UNSCII_8=1
-    -DLV_USE_FONT_SUBPX=1
-    -DLV_USE_BIDI=0
-    -DLV_USE_ARABIC_PERSIAN_CHARS=0
-    ${LVGL_TEST_COMMON_EXAMPLE_OPTIONS}
-    -DLV_FONT_DEFAULT=&lv_font_montserrat_14
-    -DLV_USE_PNG=1
-    -DLV_USE_BMP=1
-    -DLV_USE_SJPG=1
-    -DLV_USE_GIF=1
-    -DLV_USE_QRCODE=1
+set(LVGL_TEST_OPTIONS_FULL_24BIT
+    -DLV_TEST_OPTION=4
 )
 
 set(LVGL_TEST_OPTIONS_FULL_32BIT
-    -DLV_COLOR_DEPTH=32
-    -DLV_MEM_SIZE=8388608
-    -DLV_DPI_DEF=160
-    -DLV_DRAW_COMPLEX=1
-    -DLV_SHADOW_CACHE_SIZE=1
-    -DLV_IMG_CACHE_DEF_SIZE=32
-    -DLV_USE_LOG=1
-    -DLV_LOG_LEVEL=LV_LOG_LEVEL_TRACE
-    -DLV_LOG_PRINTF=1
-    -DLV_USE_FONT_SUBPX=1
-    -DLV_FONT_SUBPX_BGR=1
-    -DLV_USE_PERF_MONITOR=1
-    -DLV_USE_ASSERT_NULL=1
-    -DLV_USE_ASSERT_MALLOC=1
-    -DLV_USE_ASSERT_MEM_INTEGRITY=1
-    -DLV_USE_ASSERT_OBJ=1
-    -DLV_USE_ASSERT_STYLE=1
-    -DLV_USE_USER_DATA=1
-    -DLV_USE_LARGE_COORD=1
-    -DLV_FONT_MONTSERRAT_8=1
-    -DLV_FONT_MONTSERRAT_10=1
-    -DLV_FONT_MONTSERRAT_12=1
-    -DLV_FONT_MONTSERRAT_14=1
-    -DLV_FONT_MONTSERRAT_16=1
-    -DLV_FONT_MONTSERRAT_18=1
-    -DLV_FONT_MONTSERRAT_20=1
-    -DLV_FONT_MONTSERRAT_22=1
-    -DLV_FONT_MONTSERRAT_24=1
-    -DLV_FONT_MONTSERRAT_26=1
-    -DLV_FONT_MONTSERRAT_28=1
-    -DLV_FONT_MONTSERRAT_30=1
-    -DLV_FONT_MONTSERRAT_32=1
-    -DLV_FONT_MONTSERRAT_34=1
-    -DLV_FONT_MONTSERRAT_36=1
-    -DLV_FONT_MONTSERRAT_38=1
-    -DLV_FONT_MONTSERRAT_40=1
-    -DLV_FONT_MONTSERRAT_42=1
-    -DLV_FONT_MONTSERRAT_44=1
-    -DLV_FONT_MONTSERRAT_46=1
-    -DLV_FONT_MONTSERRAT_48=1
-    -DLV_FONT_MONTSERRAT_12_SUBPX=1
-    -DLV_FONT_MONTSERRAT_28_COMPRESSED=1
-    -DLV_FONT_DEJAVU_16_PERSIAN_HEBREW=1
-    -DLV_FONT_SIMSUN_16_CJK=1
-    -DLV_FONT_UNSCII_8=1
-    -DLV_FONT_UNSCII_16=1
-    -DLV_FONT_FMT_TXT_LARGE=1
-    -DLV_USE_FONT_COMPRESSED=1
-    -DLV_USE_BIDI=1
-    -DLV_USE_ARABIC_PERSIAN_CHARS=1
-    -DLV_USE_PERF_MONITOR=1
-    -DLV_USE_MEM_MONITOR=1
-    -DLV_LABEL_TEXT_SELECTION=1
-    ${LVGL_TEST_COMMON_EXAMPLE_OPTIONS}
-    -DLV_FONT_DEFAULT=&lv_font_montserrat_24
-    -DLV_USE_FS_STDIO=1
-    -DLV_FS_STDIO_LETTER='A'
-    -DLV_USE_FS_POSIX=1
-    -DLV_FS_POSIX_LETTER='B'
-    -DLV_USE_PNG=1
-    -DLV_USE_BMP=1
-    -DLV_USE_SJPG=1
-    -DLV_USE_GIF=1
-    -DLV_USE_QRCODE=1
-    -DLV_USE_FRAGMENT=1
-    -DLV_USE_IMGFONT=1
-    -DLV_USE_MSG=1
-)
-
-set(LVGL_TEST_OPTIONS_TEST_COMMON
-    --coverage
-    -DLV_COLOR_DEPTH=32
-    -DLV_MEM_SIZE=2097152
-    -DLV_SHADOW_CACHE_SIZE=10240
-    -DLV_IMG_CACHE_DEF_SIZE=32
-    -DLV_DITHER_GRADIENT=1
-    -DLV_DITHER_ERROR_DIFFUSION=1
-    -DLV_GRAD_CACHE_DEF_SIZE=8*1024
-    -DLV_USE_LOG=1
-    -DLV_LOG_PRINTF=1
-    -DLV_USE_FONT_SUBPX=1
-    -DLV_FONT_SUBPX_BGR=1
-    -DLV_USE_ASSERT_NULL=0
-    -DLV_USE_ASSERT_MALLOC=0
-    -DLV_USE_ASSERT_MEM_INTEGRITY=0
-    -DLV_USE_ASSERT_OBJ=0
-    -DLV_USE_ASSERT_STYLE=0
-    -DLV_USE_USER_DATA=1
-    -DLV_USE_LARGE_COORD=1
-    -DLV_FONT_MONTSERRAT_14=1
-    -DLV_FONT_MONTSERRAT_16=1
-    -DLV_FONT_MONTSERRAT_18=1
-    -DLV_FONT_MONTSERRAT_24=1
-    -DLV_FONT_MONTSERRAT_48=1
-    -DLV_FONT_MONTSERRAT_12_SUBPX=1
-    -DLV_FONT_MONTSERRAT_28_COMPRESSED=1
-    -DLV_FONT_DEJAVU_16_PERSIAN_HEBREW=1
-    -DLV_FONT_SIMSUN_16_CJK=1
-    -DLV_FONT_UNSCII_8=1
-    -DLV_FONT_UNSCII_16=1
-    -DLV_FONT_FMT_TXT_LARGE=1
-    -DLV_USE_FONT_COMPRESSED=1
-    -DLV_USE_BIDI=1
-    -DLV_USE_ARABIC_PERSIAN_CHARS=1
-    -DLV_LABEL_TEXT_SELECTION=1
-    -DLV_USE_FS_STDIO=1
-    -DLV_FS_STDIO_LETTER='A'
-    -DLV_FS_STDIO_CACHE_SIZE=100
-    -DLV_USE_FS_POSIX=1
-    -DLV_FS_POSIX_LETTER='B'
-    -DLV_FS_POSIX_CACHE_SIZE=0
-    ${LVGL_TEST_COMMON_EXAMPLE_OPTIONS}
-    -DLV_FONT_DEFAULT=&lv_font_montserrat_14
-    -Wno-unused-but-set-variable # unused variables are common in the dual-heap arrangement
-    -Wno-unused-variable
+    -DLV_TEST_OPTION=5
 )
 
 set(LVGL_TEST_OPTIONS_TEST_SYSHEAP
-    ${LVGL_TEST_OPTIONS_TEST_COMMON}
+    -DLV_TEST_OPTION=5
     -DLVGL_CI_USING_SYS_HEAP
-    -DLV_MEM_CUSTOM=1
-    -fsanitize=address
+    -Wno-unused-but-set-variable # unused variables are common in the dual-heap arrangement
 )
 
 set(LVGL_TEST_OPTIONS_TEST_DEFHEAP
-    ${LVGL_TEST_OPTIONS_TEST_COMMON}
+    -DLV_TEST_OPTION=5
     -DLVGL_CI_USING_DEF_HEAP
-    -DLV_MEM_SIZE=2097152
     -fsanitize=address
+    -fsanitize=leak
+    -fsanitize=undefined
+    --coverage
 )
 
-if (OPTIONS_MINIMAL_MONOCHROME)
-    set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_MINIMAL_MONOCHROME})
+if (OPTIONS_VG_LITE)
+    set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_VG_LITE})
 elseif (OPTIONS_NORMAL_8BIT)
     set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_NORMAL_8BIT})
 elseif (OPTIONS_16BIT)
     set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_16BIT})
-elseif (OPTIONS_16BIT_SWAP)
-    set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_16BIT_SWAP})
+elseif (OPTIONS_24BIT)
+    set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_24BIT})
 elseif (OPTIONS_FULL_32BIT)
     set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_FULL_32BIT})
 elseif (OPTIONS_TEST_SYSHEAP)
-    set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_TEST_SYSHEAP})
-    set (TEST_LIBS --coverage -fsanitize=address)
+    set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_TEST_SYSHEAP} -fsanitize=address -fsanitize=leak -fsanitize=undefined --coverage)
+    filter_compiler_options (C TEST_LIBS --coverage -fsanitize=address -fsanitize=leak -fsanitize=undefined)
+    set (LV_CONF_BUILD_DISABLE_EXAMPLES ON)
+    set (ENABLE_TESTS ON)
 elseif (OPTIONS_TEST_DEFHEAP)
     set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_TEST_DEFHEAP})
-    set (TEST_LIBS --coverage -fsanitize=address)
+    filter_compiler_options (C TEST_LIBS --coverage -fsanitize=address -fsanitize=leak -fsanitize=undefined)
+    set (LV_CONF_BUILD_DISABLE_EXAMPLES ON)
+    set (ENABLE_TESTS ON)
+elseif (OPTIONS_TEST_MEMORYCHECK)
+    # sanitizer is disabled because valgrind uses LD_PRELOAD and the
+    # sanitizer lib needs to load first
+    set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_TEST_SYSHEAP})
+    set (LV_CONF_BUILD_DISABLE_EXAMPLES ON)
+    set (ENABLE_TESTS ON)
 else()
     message(FATAL_ERROR "Must provide a known options value (check main.py?).")
+endif()
+
+
+if ($ENV{NON_AMD64_BUILD})
+    set(BUILD_TARGET_DEF -DNON_AMD64_BUILD)
+    message("Non AMD64 target is specified")
 endif()
 
 # Options lvgl and examples are compiled with.
@@ -293,32 +142,49 @@ set(COMPILE_OPTIONS
     -Wmissing-prototypes
     -Wpointer-arith
     -Wmultichar
-    -Wno-discarded-qualifiers
-    -Wpedantic
+    -Wno-pedantic # ignored for now, we convert functions to pointers for propertis table.
     -Wreturn-type
     -Wshadow
     -Wshift-negative-value
     -Wsizeof-pointer-memaccess
-    -Wstack-usage=5000
+    #-Wstack-usage=6000
     -Wtype-limits
     -Wundef
     -Wuninitialized
     -Wunreachable-code
+    -Werror=float-conversion
+    -Werror=strict-aliasing
+    -Wno-double-promotion
+    -Wno-unused-but-set-parameter
+    -Wno-unreachable-code
     ${BUILD_OPTIONS}
+    ${BUILD_TARGET_DEF}
 )
 
+filter_compiler_options(C LVGL_COMPILE_OPTIONS ${COMPILE_OPTIONS})
+
 # Options test cases are compiled with.
-set(LVGL_TESTFILE_COMPILE_OPTIONS
-    ${COMPILE_OPTIONS}
-    -Wno-missing-prototypes
+filter_compiler_options(C LVGL_TESTFILE_COMPILE_OPTIONS ${LVGL_COMPILE_OPTIONS} -Wno-missing-prototypes)
+
+filter_compiler_options(CXX LVGL_THORVG_COMPILE_OPTIONS
+        ${COMPILE_OPTIONS}
+        -Wno-shadow
+        -Wno-unused-parameter
+        -Wno-c++11-extensions
+        -Wno-missing-prototypes
+        -Wno-deprecated-copy-with-user-provided-dtor
+        -Wno-float-conversion
 )
 
 get_filename_component(LVGL_DIR ${LVGL_TEST_DIR} DIRECTORY)
 
 # Include lvgl project file.
 include(${LVGL_DIR}/CMakeLists.txt)
-target_compile_options(lvgl PUBLIC ${COMPILE_OPTIONS})
-target_compile_options(lvgl_examples PUBLIC ${COMPILE_OPTIONS})
+target_compile_options(lvgl PUBLIC ${LVGL_COMPILE_OPTIONS})
+target_compile_options(lvgl_thorvg PUBLIC ${LVGL_THORVG_COMPILE_OPTIONS})
+if (TARGET lvgl_examples)
+  target_compile_options(lvgl_examples PUBLIC ${LVGL_COMPILE_OPTIONS})
+endif()
 
 
 set(TEST_INCLUDE_DIRS
@@ -327,31 +193,73 @@ set(TEST_INCLUDE_DIRS
     $<BUILD_INTERFACE:${LVGL_TEST_DIR}>
 )
 
+file(GLOB_RECURSE TEST_IMAGES_SRC ${LVGL_TEST_DIR}/test_images/*.c)
+
 add_library(test_common
     STATIC
         src/lv_test_indev.c
         src/lv_test_init.c
-        src/test_fonts/font_1.c
-        src/test_fonts/font_2.c
-        src/test_fonts/font_3.c
-        src/test_fonts/ubuntu_font.c
+        src/lv_test_helpers.c
+        src/test_assets/test_animimg001.c
+        src/test_assets/test_animimg002.c
+        src/test_assets/test_animimg003.c
+        src/test_assets/test_img_cogwheel_i4.c
+        src/test_assets/test_img_cogwheel_a8.c
+        src/test_assets/test_img_cogwheel_rgb565.c
+        src/test_assets/test_img_cogwheel_rgb565a8.c
+        src/test_assets/test_img_cogwheel_xrgb8888.c
+        src/test_assets/test_img_cogwheel_argb8888.c
+        src/test_assets/font_1.c
+        src/test_assets/font_2.c
+        src/test_assets/font_3.c
+        src/test_assets/test_font_montserrat_ascii_1bpp.c
+        src/test_assets/test_font_montserrat_ascii_2bpp.c
+        src/test_assets/test_font_montserrat_ascii_4bpp.c
+        src/test_assets/test_font_montserrat_ascii_4bpp_compressed.c
+        src/test_assets/font_1_bin.c
+        src/test_assets/font_2_bin.c
+        src/test_assets/font_3_bin.c
+        src/test_assets/test_img_caret_down.c
+        src/test_assets/test_arc_bg.c
+        src/test_assets/test_img_lvgl_logo_png.c
+        src/test_assets/test_img_lvgl_logo_jpg.c
+        src/test_assets/test_img_emoji_F617.c
+        src/test_assets/ubuntu_font.c
+        src/test_assets/kern_one_otf.c
         unity/unity_support.c
         unity/unity.c
+        ${TEST_IMAGES_SRC}
 )
 target_include_directories(test_common PUBLIC ${TEST_INCLUDE_DIRS})
 target_compile_options(test_common PUBLIC ${LVGL_TESTFILE_COMPILE_OPTIONS})
 
-# Some examples `#include "lvgl/lvgl.h"` - which is a path which is not
-# in this source repository. If this repo is in a directory names 'lvgl'
-# then we can add our parent directory to the include path.
-# TODO: This is not good practice and should be fixed.
-get_filename_component(LVGL_PARENT_DIR ${LVGL_DIR} DIRECTORY)
-target_include_directories(lvgl_examples PUBLIC $<BUILD_INTERFACE:${LVGL_PARENT_DIR}>)
-
 # Generate one test executable for each source file pair.
-# The sources in src/test_runners is auto-generated, the
+# The sources in ${CMAKE_CURRENT_BINARY_DIR} is auto-generated, the
 # sources in src/test_cases is the actual test case.
-file( GLOB TEST_CASE_FILES src/test_cases/*.c )
+find_package(Ruby REQUIRED)
+set(generate_test_runner_rb
+    ${CMAKE_CURRENT_SOURCE_DIR}/unity/generate_test_runner.rb)
+set(generate_test_runner_config ${CMAKE_CURRENT_SOURCE_DIR}/config.yml)
+
+# libjpeg is required for the jpeg test case
+find_package(JPEG REQUIRED)
+include_directories(${JPEG_INCLUDE_DIR})
+
+# libpng is required for the png test case
+find_package(PNG REQUIRED)
+include_directories(${PNG_INCLUDE_DIR})
+
+# libfreetype is required for the font test case
+find_package(Freetype REQUIRED)
+include_directories(${FREETYPE_INCLUDE_DIRS})
+
+# disable test targets for build only tests
+if (ENABLE_TESTS)
+    file( GLOB_RECURSE TEST_CASE_FILES src/test_cases/*.c )
+else()
+    set(TEST_CASE_FILES)
+endif()
+
 foreach( test_case_fname ${TEST_CASE_FILES} )
     # If test file is foo/bar/baz.c then test_name is "baz".
     get_filename_component(test_name ${test_case_fname} NAME_WLE)
@@ -359,12 +267,30 @@ foreach( test_case_fname ${TEST_CASE_FILES} )
         continue()
     endif()
     # Create path to auto-generated source file.
-    set(test_runner_fname src/test_runners/${test_name}_Runner.c)
+    set(test_runner_fname ${CMAKE_CURRENT_BINARY_DIR}/${test_name}_Runner.c)
+    # Run ruby to generate source in build directory
+    add_custom_command(
+        OUTPUT ${test_runner_fname}
+        COMMAND ${RUBY_EXECUTABLE} ${generate_test_runner_rb}
+                ${test_case_fname} ${test_runner_fname}
+                ${generate_test_runner_config}
+        DEPENDS ${generate_test_runner_rb} ${test_case_fname}
+                ${generate_test_runner_config}
+    )
     add_executable( ${test_name}
         ${test_case_fname}
         ${test_runner_fname}
     )
-    target_link_libraries(${test_name} test_common lvgl_examples lvgl_demos lvgl png m ${TEST_LIBS})
+    target_link_libraries(${test_name} PRIVATE
+            test_common
+            lvgl_demos
+            lvgl
+            lvgl_thorvg
+            ${PNG_LIBRARIES}
+            ${FREETYPE_LIBRARIES}
+            ${JPEG_LIBRARIES}
+            m
+            ${TEST_LIBS})
     target_include_directories(${test_name} PUBLIC ${TEST_INCLUDE_DIRS})
     target_compile_options(${test_name} PUBLIC ${LVGL_TESTFILE_COMPILE_OPTIONS})
 

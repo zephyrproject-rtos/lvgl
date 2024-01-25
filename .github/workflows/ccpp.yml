@@ -14,14 +14,13 @@ jobs:
       matrix:
         # A valid option parameter to the cmake file.
         # See BUILD_OPTIONS in tests/CMakeLists.txt.
-        build_option: ['OPTIONS_MINIMAL_MONOCHROME',
-                       'OPTIONS_NORMAL_8BIT',
-                       'OPTIONS_16BIT',
-                       'OPTIONS_16BIT_SWAP',
-                       'OPTIONS_FULL_32BIT']
+        build_option: ['OPTIONS_16BIT',
+                       'OPTIONS_24BIT',
+                       'OPTIONS_FULL_32BIT',
+                       "OPTIONS_VG_LITE"]
     name: Build ${{ matrix.build_option }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - uses: ammaraskar/gcc-problem-matcher@master
     - name: Install prerequisites
       run: scripts/install-prerequisites.sh
@@ -32,15 +31,23 @@ jobs:
     runs-on: ubuntu-latest
     name: amd64 Executable Tests
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - uses: ammaraskar/gcc-problem-matcher@master
     - name: Install prerequisites
       run: scripts/install-prerequisites.sh
     - name: Run tests
-      run: python tests/main.py --report test
+      run: python tests/main.py --report --update-image test
+    - name: Archive screenshot errors
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: screenshot-errors-amd64
+        path: |
+             tests/ref_imgs/**/*_err.png
+             test_screenshot_error.h
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v2
-      if: github.event_name == 'push'
+      uses: codecov/codecov-action@v3
+      if: github.event_name == 'push' && github.repository == 'lvgl/lvgl'
       with:
         fail_ci_if_error: true
         verbose: true
@@ -55,17 +62,17 @@ jobs:
         arch: [ 'aarch64', 'armv6', 'armv7' ]
 
     steps:
-      - uses: actions/checkout@v2.1.0
+      - uses: actions/checkout@v4
       - uses: ammaraskar/gcc-problem-matcher@master
       - name: Setup cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.ccache
           key: lvgl_ci_cross_test_ccache_${{ matrix.arch }}_${{ github.sha }}
           restore-keys: |
             lvgl_ci_cross_test_ccache_${{ matrix.arch }}
-      - uses: uraimo/run-on-arch-action@v2.1.1
+      - uses: uraimo/run-on-arch-action@v2.6.0
         name: Run tests
         id: build
         with:
@@ -77,7 +84,7 @@ jobs:
 
           # The shell to run commands with in the container
           shell: /bin/bash
-          
+
           # Create cached/volume directories on host
           setup: |
             mkdir -p ~/.ccache
@@ -88,9 +95,19 @@ jobs:
 
           install: |
             apt-get update -y
-            apt-get install build-essential ccache python3 libpng-dev ruby-full gcovr cmake -q -y
+            apt-get install build-essential ccache libgcc-10-dev python3 libpng-dev ruby-full gcovr cmake libjpeg62-turbo-dev libfreetype6-dev libasan6 pngquant python3-pip -q -y
+            pip install pypng lz4
             /usr/sbin/update-ccache-symlinks
             echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc
 
           run: |
-            env PATH="/usr/lib/ccache:$PATH" ASAN_OPTIONS=detect_leaks=0 python3 tests/main.py test
+            env PATH="/usr/lib/ccache:$PATH" NON_AMD64_BUILD=1 ASAN_OPTIONS=detect_leaks=0 python3 tests/main.py test
+      - name: Archive screenshot errors
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+            name: screenshot-errors-${{ matrix.arch }}
+            path: |
+                tests/ref_imgs/**/*_err.png
+                test_screenshot_error.h
+
