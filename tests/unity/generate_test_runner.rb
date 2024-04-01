@@ -114,7 +114,7 @@ class UnityTestRunnerGenerator
     # @ is not a valid C character, so there should be no clashes with files genuinely containing these markers
     substring_subs = { '{' => '@co@', '}' => '@cc@', ';' => '@ss@', '/' => '@fs@' }
     substring_re = Regexp.union(substring_subs.keys)
-    substring_unsubs = substring_subs.invert                   # the inverse map will be used to fix the strings afterwords
+    substring_unsubs = substring_subs.invert                   # the inverse map will be used to fix the strings afterwards
     substring_unsubs['@quote@'] = '\\"'
     substring_unsubs['@apos@'] = '\\\''
     substring_unre = Regexp.union(substring_unsubs.keys)
@@ -341,7 +341,7 @@ class UnityTestRunnerGenerator
 
   def create_run_test(output)
     require 'erb'
-    template = ERB.new(File.read(File.join(__dir__, 'run_test.erb')), nil, '<>')
+    template = ERB.new(File.read(File.join(__dir__, 'run_test.erb')), trim_mode: '<>')
     output.puts("\n" + template.result(binding))
   end
 

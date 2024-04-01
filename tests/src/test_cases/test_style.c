@@ -6,12 +6,13 @@
 
 static void obj_set_height_helper(void * obj, int32_t height)
 {
-    lv_obj_set_height((lv_obj_t *)obj, (lv_coord_t)height);
+    lv_obj_set_height((lv_obj_t *)obj, (int32_t)height);
 }
 
 void test_gradient_vertical_misalignment(void)
 {
-    lv_obj_t * obj = lv_obj_create(lv_scr_act());
+    /* Tests gradient caching as the height of widget changes.*/
+    lv_obj_t * obj = lv_obj_create(lv_screen_active());
     lv_obj_set_style_bg_grad_dir(obj, LV_GRAD_DIR_VER, 0);
     lv_obj_set_style_bg_grad_color(obj, lv_color_hex(0xff0000), 0);
     lv_obj_set_style_bg_color(obj, lv_color_hex(0x00ff00), 0);
@@ -26,16 +27,16 @@ void test_gradient_vertical_misalignment(void)
     lv_anim_init(&a);
     lv_anim_set_var(&a, obj);
     lv_anim_set_exec_cb(&a, obj_set_height_helper);
-    lv_anim_set_time(&a, 3000);
-    lv_anim_set_playback_time(&a, 3000);
+    lv_anim_set_duration(&a, 1000);
+    lv_anim_set_playback_duration(&a, 1000);
     lv_anim_set_repeat_count(&a, 100);
     lv_anim_set_values(&a, 0, 300);
     lv_anim_start(&a);
 
     uint32_t i;
-    for(i = 0; i < 1000; i++) {
+    for(i = 0; i < 100; i++) {
         lv_timer_handler();
-        lv_tick_inc(100);
+        lv_tick_inc(73); /*Use a not round number to cover more anim states */
         usleep(1000);
     }
 }
@@ -66,44 +67,77 @@ void test_custom_prop_ids(void)
      * were registered + whatever's built-in. A failure here may just indicate
      * that LVGL registers more built-in properties now and this needs adjustment.
      */
-    extern uint32_t _lv_style_custom_prop_flag_lookup_table_size;
-    TEST_ASSERT_EQUAL(_lv_style_custom_prop_flag_lookup_table_size, 96);
+    TEST_ASSERT_EQUAL(LV_GLOBAL_DEFAULT()->style_custom_table_size, 64);
 }
 
-void test_inherit_meta(void)
+const lv_style_const_prop_t const_style_props[] = {
+    LV_STYLE_CONST_WIDTH(51),
+    LV_STYLE_CONST_HEIGHT(50),
+    LV_STYLE_CONST_PROPS_END
+};
+
+LV_STYLE_CONST_INIT(const_style, const_style_props);
+
+void test_const_style(void)
 {
-    lv_obj_t * parent = lv_obj_create(lv_scr_act());
-    lv_obj_t * child = lv_obj_create(parent);
-    lv_obj_t * grandchild = lv_label_create(child);
-    lv_obj_set_style_text_color(parent, lv_color_hex(0xff0000), LV_PART_MAIN);
-    lv_obj_set_local_style_prop_meta(child, LV_STYLE_TEXT_COLOR, LV_STYLE_PROP_META_INHERIT, LV_PART_MAIN);
-    TEST_ASSERT_EQUAL_HEX(lv_color_hex(0xff0000).full, lv_obj_get_style_text_color(grandchild, LV_PART_MAIN).full);
+    lv_obj_t * obj = lv_obj_create(lv_screen_active());
+    lv_obj_add_style(obj, &const_style, LV_PART_MAIN);
+    TEST_ASSERT_EQUAL(51, lv_obj_get_style_width(obj, LV_PART_MAIN));
+    TEST_ASSERT_EQUAL(50, lv_obj_get_style_height(obj, LV_PART_MAIN));
 }
 
-void test_id_meta_overrun(void)
+void test_style_replacement(void)
 {
-    /* Test that property ID registration is blocked once the ID reaches into the meta bits */
-    lv_style_prop_t prop_id;
-    do {
-        prop_id = lv_style_register_prop(0);
-        if(prop_id != LV_STYLE_PROP_INV) {
-            TEST_ASSERT_EQUAL(0, prop_id & LV_STYLE_PROP_META_MASK);
-        }
-    } while(prop_id != LV_STYLE_PROP_INV);
+    /*Define styles*/
+    lv_style_t style_red;
+    lv_style_t style_blue;
+
+    lv_style_init(&style_red);
+    lv_style_set_bg_color(&style_red, lv_color_hex(0xff0000));
+
+    lv_style_init(&style_blue);
+    lv_style_set_bg_color(&style_blue, lv_color_hex(0x0000ff));
+
+    /*Create object with style*/
+    lv_obj_t * obj = lv_obj_create(lv_screen_active());
+    lv_obj_add_style(obj, &style_red, LV_PART_MAIN);
+    TEST_ASSERT_EQUAL_COLOR(lv_color_hex(0xff0000), lv_obj_get_style_bg_color(obj, LV_PART_MAIN));
+
+    /*Replace style successfully*/
+    bool replaced = lv_obj_replace_style(obj, &style_red, &style_blue, LV_PART_MAIN);
+    TEST_ASSERT_EQUAL(true, replaced);
+    TEST_ASSERT_EQUAL_COLOR(lv_color_hex(0x0000ff), lv_obj_get_style_bg_color(obj, LV_PART_MAIN));
+
+    /*Failed replacement (already replaced)*/
+    replaced = lv_obj_replace_style(obj, &style_red, &style_blue, LV_PART_MAIN);
+    TEST_ASSERT_EQUAL(false, replaced);
+    TEST_ASSERT_EQUAL_COLOR(lv_color_hex(0x0000ff), lv_obj_get_style_bg_color(obj, LV_PART_MAIN));
+
+    lv_style_reset(&style_red);
+    lv_style_reset(&style_blue);
 }
 
-void test_inherit_meta_with_lower_precedence_style(void)
+void test_style_has_prop(void)
 {
-    lv_obj_t * parent = lv_obj_create(lv_scr_act());
-    lv_obj_t * child = lv_obj_create(parent);
-    lv_obj_t * grandchild = lv_label_create(child);
-    lv_obj_set_style_text_color(parent, lv_color_hex(0xff0000), LV_PART_MAIN);
     lv_style_t style;
     lv_style_init(&style);
-    lv_style_set_text_color(&style, lv_color_hex(0xffffff));
-    lv_obj_set_local_style_prop_meta(child, LV_STYLE_TEXT_COLOR, LV_STYLE_PROP_META_INHERIT, LV_PART_MAIN);
-    lv_obj_add_style(child, &style, LV_PART_MAIN);
-    TEST_ASSERT_EQUAL_HEX(lv_color_hex(0xff0000).full, lv_obj_get_style_text_color(grandchild, LV_PART_MAIN).full);
+    lv_style_set_outline_color(&style, lv_color_white());
+
+    /*Create object with style*/
+    lv_obj_t * obj = lv_obj_create(lv_screen_active());
+
+    TEST_ASSERT_EQUAL(false, lv_obj_has_style_prop(obj, LV_PART_MAIN, LV_STYLE_OUTLINE_COLOR));
+    TEST_ASSERT_EQUAL(false, lv_obj_has_style_prop(obj, LV_PART_MAIN, LV_STYLE_OUTLINE_WIDTH));
+    TEST_ASSERT_EQUAL(false, lv_obj_has_style_prop(obj, LV_PART_INDICATOR, LV_STYLE_OUTLINE_COLOR));
+
+    lv_obj_add_style(obj, &style, LV_PART_MAIN);
+    lv_obj_set_style_outline_width(obj, 2, LV_PART_MAIN);
+
+    TEST_ASSERT_EQUAL(true, lv_obj_has_style_prop(obj, LV_PART_MAIN, LV_STYLE_OUTLINE_COLOR));
+    TEST_ASSERT_EQUAL(true, lv_obj_has_style_prop(obj, LV_PART_MAIN, LV_STYLE_OUTLINE_WIDTH));
+    TEST_ASSERT_EQUAL(false, lv_obj_has_style_prop(obj, LV_PART_INDICATOR, LV_STYLE_OUTLINE_COLOR));
+
+    lv_style_reset(&style);
 }
 
 #endif

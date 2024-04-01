@@ -10,7 +10,13 @@
 static void loop_through_stress_test(void)
 {
 #if LV_USE_DEMO_STRESS
-    lv_test_indev_wait(LV_DEMO_STRESS_TIME_STEP * 33); /* FIXME: remove magic number of states */
+    while(1) {
+        lv_timer_handler();
+        if(lv_demo_stress_finished()) {
+            break;
+        }
+        lv_tick_inc(1);
+    }
 #endif
 }
 void test_demo_stress(void)
@@ -20,13 +26,12 @@ void test_demo_stress(void)
 #endif
     /* loop once to allow objects to be created */
     loop_through_stress_test();
-    uint32_t mem_before = lv_test_get_free_mem();
-    /* loop 10 more times */
-    for(uint32_t i = 0; i < 10; i++) {
+    size_t mem_before = lv_test_get_free_mem();
+    /* loop 5 more times */
+    for(uint32_t i = 0; i < 5; i++) {
         loop_through_stress_test();
     }
     TEST_ASSERT_EQUAL(mem_before, lv_test_get_free_mem());
 }
 
 #endif
-

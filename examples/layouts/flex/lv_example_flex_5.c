@@ -16,7 +16,7 @@ static void column_gap_anim(void * obj, int32_t v)
  */
 void lv_example_flex_5(void)
 {
-    lv_obj_t * cont = lv_obj_create(lv_scr_act());
+    lv_obj_t * cont = lv_obj_create(lv_screen_active());
     lv_obj_set_size(cont, 300, 220);
     lv_obj_center(cont);
     lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW_WRAP);
@@ -38,13 +38,13 @@ void lv_example_flex_5(void)
     lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
 
     lv_anim_set_exec_cb(&a, row_gap_anim);
-    lv_anim_set_time(&a, 500);
-    lv_anim_set_playback_time(&a, 500);
+    lv_anim_set_duration(&a, 500);
+    lv_anim_set_playback_duration(&a, 500);
     lv_anim_start(&a);
 
     lv_anim_set_exec_cb(&a, column_gap_anim);
-    lv_anim_set_time(&a, 3000);
-    lv_anim_set_playback_time(&a, 3000);
+    lv_anim_set_duration(&a, 3000);
+    lv_anim_set_playback_duration(&a, 3000);
     lv_anim_start(&a);
 }
 
