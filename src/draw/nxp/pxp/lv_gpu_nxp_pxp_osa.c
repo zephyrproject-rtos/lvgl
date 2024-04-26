@@ -44,6 +44,7 @@
 
 #if defined(__ZEPHYR__)
     #include <zephyr/kernel.h>
+    #include <zephyr/irq.h>
 #endif
 
 /*********************
@@ -141,21 +142,25 @@ static lv_res_t _lv_gpu_nxp_pxp_interrupt_init(void)
         return LV_RES_INV;
 
     NVIC_SetPriority(LV_GPU_NXP_PXP_IRQ_ID, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
-#endif
-    s_pxpIdle = true;
-
     NVIC_EnableIRQ(LV_GPU_NXP_PXP_IRQ_ID);
 
+#elif defined(__ZEPHYR__)
+    IRQ_DIRECT_CONNECT(LV_GPU_NXP_PXP_IRQ_ID, CONFIG_DMA_INIT_PRIORITY, PXP_IRQHandler, 0);
+    irq_enable(LV_GPU_NXP_PXP_IRQ_ID);
+#endif
+
+    s_pxpIdle = true;
     return LV_RES_OK;
 }
 
 static void _lv_gpu_nxp_pxp_interrupt_deinit(void)
 {
-    NVIC_DisableIRQ(LV_GPU_NXP_PXP_IRQ_ID);
 #if defined(SDK_OS_FREE_RTOS)
     vSemaphoreDelete(s_pxpIdleSem);
+    NVIC_DisableIRQ(LV_GPU_NXP_PXP_IRQ_ID);
 #elif defined(__ZEPHYR__)
     k_sem_reset(&s_pxpIdleSem);
+    irq_disable(LV_GPU_NXP_PXP_IRQ_ID);
 #endif
 }
 
