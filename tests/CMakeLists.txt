@@ -206,6 +206,7 @@ if(NOT (CMAKE_C_COMPILER_ID STREQUAL "MSVC"))
         -Wno-double-promotion
         -Wno-unreachable-code
         -Wno-gnu-zero-variadic-macro-arguments
+        -Wunused-function
 	-Wno-overlength-strings
     )
 else()
@@ -293,7 +294,7 @@ add_library(test_common
         src/test_assets/test_font_montserrat_ascii_1bpp.c
         src/test_assets/test_font_montserrat_ascii_2bpp.c
         src/test_assets/test_font_montserrat_ascii_4bpp.c
-        src/test_assets/test_font_montserrat_ascii_4bpp_compressed.c
+        src/test_assets/test_font_montserrat_ascii_3bpp_compressed.c
         src/test_assets/test_font_1_bin.c
         src/test_assets/test_font_2_bin.c
         src/test_assets/test_font_3_bin.c

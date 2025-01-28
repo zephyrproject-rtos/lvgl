@@ -169,6 +169,10 @@ typedef struct _lv_global_t {
     lv_fs_drv_t win32_fs_drv;
 #endif
 
+#if LV_USE_FS_UEFI
+    lv_fs_drv_t uefi_fs_drv;
+#endif
+
 #if LV_USE_FS_LITTLEFS
     lv_fs_drv_t littlefs_fs_drv;
 #endif
@@ -229,6 +233,9 @@ typedef struct _lv_global_t {
     bool freertos_idle_task_running;
 #endif
 
+#if LV_USE_EVDEV
+    lv_evdev_discovery_t * evdev_discovery;
+#endif
 
     void * user_data;
 } lv_global_t;

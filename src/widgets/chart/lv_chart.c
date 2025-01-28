@@ -266,6 +266,9 @@ void lv_chart_get_point_pos_by_id(lv_obj_t * obj, lv_chart_series_t * ser, uint3
         int32_t col_w = (block_w - (ser_gap * (ser_cnt - 1))) / ser_cnt;
         p_out->x += col_w / 2;
     }
+    else {
+        p_out->x = 0;
+    }
 
     int32_t border_width = lv_obj_get_style_border_width(obj, LV_PART_MAIN);
     p_out->x += lv_obj_get_style_pad_left(obj, LV_PART_MAIN) + border_width;
@@ -737,6 +740,7 @@ static void draw_div_lines(lv_obj_t * obj, lv_layer_t * layer)
 
     lv_draw_line_dsc_t line_dsc;
     lv_draw_line_dsc_init(&line_dsc);
+    line_dsc.base.layer = layer;
     lv_obj_init_draw_line_dsc(obj, LV_PART_MAIN, &line_dsc);
 
     lv_opa_t border_opa = lv_obj_get_style_border_opa(obj, LV_PART_MAIN);
@@ -818,10 +822,12 @@ static void draw_series_line(lv_obj_t * obj, lv_layer_t * layer)
 
     lv_draw_line_dsc_t line_dsc;
     lv_draw_line_dsc_init(&line_dsc);
+    line_dsc.base.layer = layer;
     lv_obj_init_draw_line_dsc(obj, LV_PART_ITEMS, &line_dsc);
 
     lv_draw_rect_dsc_t point_dsc_default;
     lv_draw_rect_dsc_init(&point_dsc_default);
+    point_dsc_default.base.layer = layer;
     lv_obj_init_draw_rect_dsc(obj, LV_PART_INDICATOR, &point_dsc_default);
 
     int32_t point_w = lv_obj_get_style_width(obj, LV_PART_INDICATOR) / 2;
@@ -967,10 +973,12 @@ static void draw_series_scatter(lv_obj_t * obj, lv_layer_t * layer)
 
     lv_draw_line_dsc_t line_dsc;
     lv_draw_line_dsc_init(&line_dsc);
+    line_dsc.base.layer = layer;
     lv_obj_init_draw_line_dsc(obj, LV_PART_ITEMS, &line_dsc);
 
     lv_draw_rect_dsc_t point_dsc_default;
     lv_draw_rect_dsc_init(&point_dsc_default);
+    point_dsc_default.base.layer = layer;
     lv_obj_init_draw_rect_dsc(obj, LV_PART_INDICATOR, &point_dsc_default);
 
     int32_t point_w = lv_obj_get_style_width(obj, LV_PART_INDICATOR) / 2;
@@ -1099,6 +1107,7 @@ static void draw_series_bar(lv_obj_t * obj, lv_layer_t * layer)
 
     lv_draw_rect_dsc_t col_dsc;
     lv_draw_rect_dsc_init(&col_dsc);
+    col_dsc.base.layer = layer;
     lv_obj_init_draw_rect_dsc(obj, LV_PART_ITEMS, &col_dsc);
     col_dsc.bg_grad.dir = LV_GRAD_DIR_NONE;
     col_dsc.bg_opa = LV_OPA_COVER;
@@ -1168,10 +1177,12 @@ static void draw_cursors(lv_obj_t * obj, lv_layer_t * layer)
 
     lv_draw_line_dsc_t line_dsc_ori;
     lv_draw_line_dsc_init(&line_dsc_ori);
+    line_dsc_ori.base.layer = layer;
     lv_obj_init_draw_line_dsc(obj, LV_PART_CURSOR, &line_dsc_ori);
 
     lv_draw_rect_dsc_t point_dsc_ori;
     lv_draw_rect_dsc_init(&point_dsc_ori);
+    point_dsc_ori.base.layer = layer;
     lv_obj_init_draw_rect_dsc(obj, LV_PART_CURSOR, &point_dsc_ori);
 
     lv_draw_line_dsc_t line_dsc;
