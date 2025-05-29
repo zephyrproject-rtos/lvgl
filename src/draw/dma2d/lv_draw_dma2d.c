@@ -40,6 +40,11 @@ static int32_t delete_cb(lv_draw_unit_t * draw_unit);
 #if !LV_DRAW_DMA2D_ASYNC
     static bool check_transfer_completion(void);
 #endif
+
+#if defined(__ZEPHYR__)
+    static void lv_dma2d_isr_entry(const void * arg);
+#endif
+
 static void post_transfer_tasks(lv_draw_dma2d_unit_t * u);
 
 /**********************
@@ -82,19 +87,26 @@ void lv_draw_dma2d_init(void)
 #else
 #warning "LVGL can't enable the clock for DMA2D"
 #endif
-
     /* disable dead time */
     DMA2D->AMTCR = 0;
 
+#if defined(__ZEPHYR__)
+    IRQ_CONNECT(DMA2D_IRQn, 0, lv_dma2d_isr_entry, NULL, 0);
+    irq_enable(DMA2D_IRQn);
+#else
     /* enable the interrupt */
     NVIC_EnableIRQ(DMA2D_IRQn);
+#endif
 }
 
 void lv_draw_dma2d_deinit(void)
 {
+#if defined(__ZEPHYR__)
+    irq_disable(DMA2D_IRQn);
+#else
     /* disable the interrupt */
     NVIC_DisableIRQ(DMA2D_IRQn);
-
+#endif
     /* disable the DMA2D clock */
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32U5) || defined(STM32L4)
     RCC->AHB1ENR &= ~RCC_AHB1ENR_DMA2DEN;
@@ -279,6 +291,17 @@ void lv_draw_dma2d_clean_cache(const lv_draw_dma2d_cache_area_t * mem_area)
 /**********************
  *   STATIC FUNCTIONS
  **********************/
+
+#if defined(__ZEPHYR__)
+static void lv_dma2d_isr_entry(const void * arg)
+{
+    LV_UNUSED(arg);
+#if LV_USE_DRAW_DMA2D_INTERRUPT
+    lv_draw_dma2d_transfer_complete_interrupt_handler();
+#endif
+}
+#endif
+
 
 static int32_t evaluate_cb(lv_draw_unit_t * draw_unit, lv_draw_task_t * task)
 {
