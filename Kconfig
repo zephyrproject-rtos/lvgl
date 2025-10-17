@@ -43,7 +43,7 @@ menu "LVGL configuration"
 	menu "Memory Settings"
 		choice
 			prompt "Malloc functions source"
-			default LV_USE_BUILTIN_MALLOC
+			default LV_USE_CLIB_MALLOC
 
 		config LV_USE_BUILTIN_MALLOC
 			bool "LVGL's built in implementation"
@@ -64,7 +64,7 @@ menu "LVGL configuration"
 
 		choice
 			prompt "String functions source"
-			default LV_USE_BUILTIN_STRING
+			default LV_USE_CLIB_STRING
 
 		config LV_USE_BUILTIN_STRING
 			bool "LVGL's built in implementation"
@@ -79,7 +79,7 @@ menu "LVGL configuration"
 
 		choice
 			prompt "Sprintf functions source"
-			default LV_USE_BUILTIN_SPRINTF
+			default LV_USE_CLIB_SPRINTF
 
 		config LV_USE_BUILTIN_SPRINTF
 			bool "LVGL's built in implementation"
