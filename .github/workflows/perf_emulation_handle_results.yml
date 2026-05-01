@@ -160,7 +160,7 @@ jobs:
 
       - name: Store Results in Benchmark Release
         if: ${{ github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'master' }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: Emulated Benchmark Latest
           files: output/results*.mpk
