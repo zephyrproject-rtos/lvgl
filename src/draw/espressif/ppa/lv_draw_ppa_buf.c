@@ -41,6 +41,11 @@ void lv_draw_buf_ppa_init_handlers(void)
 
 static void invalidate_cache(const lv_draw_buf_t * draw_buf, const lv_area_t * area)
 {
-    esp_cache_msync(draw_buf->data, draw_buf->data_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_TYPE_DATA);
+    LV_UNUSED(area);
+
+    /* Write back what the CPU rendered and drop the lines the engine wrote */
+    esp_cache_msync(draw_buf->data, draw_buf->data_size,
+                    ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_TYPE_DATA |
+                    ESP_CACHE_MSYNC_FLAG_INVALIDATE);
 }
 #endif /* LV_USE_PPA */
