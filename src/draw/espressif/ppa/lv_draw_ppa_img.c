@@ -54,12 +54,11 @@ static void lv_draw_img_ppa_core(lv_draw_task_t * t, const lv_draw_image_dsc_t *
     lv_color_format_t dest_cf = draw_buf->header.cf;
     uint8_t * dest_buf = draw_buf->data;
 
-    extern const lv_image_dsc_t img_benchmark_lvgl_logo_rgb;
-
     ppa_blend_oper_config_t cfg = {
         .in_bg = {
             .buffer          = (void *)src_buf,
-            .pic_w           = draw_dsc->header.w,
+            /* pic_w sets the pitch the engine walks, so it follows the stride */
+            .pic_w           = draw_dsc->header.stride / lv_color_format_get_size(src_cf),
             .pic_h           = draw_dsc->header.h,
             .block_w         = lv_area_get_width(clipped_img_area),
             .block_h         = lv_area_get_height(clipped_img_area),
@@ -72,15 +71,16 @@ static void lv_draw_img_ppa_core(lv_draw_task_t * t, const lv_draw_image_dsc_t *
         .bg_alpha_update_mode  = PPA_ALPHA_FIX_VALUE,
         .bg_alpha_fix_val      = 0xFF,
         .bg_ck_en              = false,
+        /* The foreground is the destination surface, described with its own geometry */
         .in_fg = {
             .buffer          = (void *)dest_buf,
-            .pic_w           = draw_dsc->header.w,
-            .pic_h           = draw_dsc->header.h,
+            .pic_w           = draw_buf->header.stride / lv_color_format_get_size(dest_cf),
+            .pic_h           = draw_buf->header.h,
             .block_w         = lv_area_get_width(clipped_img_area),
             .block_h         = lv_area_get_height(clipped_img_area),
-            .block_offset_x  = src_area.x1,
-            .block_offset_y  = src_area.y1,
-            .blend_cm        = PPA_BLEND_COLOR_MODE_A8,
+            .block_offset_x  = dest_area.x1,
+            .block_offset_y  = dest_area.y1,
+            .blend_cm        = lv_color_format_to_ppa_blend(dest_cf),
         },
         .fg_fix_rgb_val = {
             .r = 0,
@@ -89,13 +89,14 @@ static void lv_draw_img_ppa_core(lv_draw_task_t * t, const lv_draw_image_dsc_t *
         },
         .fg_rgb_swap           = false,
         .fg_byte_swap          = false,
+        /* The image is opaque: hold the destination transparent so the source shows */
         .fg_alpha_update_mode  = PPA_ALPHA_FIX_VALUE,
         .fg_alpha_fix_val      = 0,
         .fg_ck_en              = false,
         .out = {
             .buffer          = dest_buf,
             .buffer_size     = draw_buf->data_size,
-            .pic_w           = draw_buf->header.w,
+            .pic_w           = draw_buf->header.stride / lv_color_format_get_size(dest_cf),
             .pic_h           = draw_buf->header.h,
             .block_offset_x  = dest_area.x1,
             .block_offset_y  = dest_area.y1,
